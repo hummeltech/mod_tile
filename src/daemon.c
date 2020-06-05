@@ -49,6 +49,8 @@ static renderd_config config;
 
 int noSlaveRenders;
 
+struct request_queue * render_request_queue;
+
 
 static const char *cmdStr(enum protoCmd c)
 {
