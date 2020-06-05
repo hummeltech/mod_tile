@@ -667,11 +667,12 @@ int main(int argc, char **argv) {
 
   while (1) {
     int option_index = 0;
-    static struct option long_options[] = {{"config", 1, 0, 'c'},
-                                           {"foreground", 1, 0, 'f'},
-                                           {"slave", 1, 0, 's'},
-                                           {"help", 0, 0, 'h'},
-                                           {0, 0, 0, 0}};
+    static struct option long_options[] = {
+        {"config", required_argument, 0, 'c'},
+        {"foreground", no_argument, 0, 'f'},
+        {"slave", required_argument, 0, 's'},
+        {"help", no_argument, 0, 'h'},
+        {0, 0, 0, 0}};
 
     c = getopt_long(argc, argv, "hfc:", long_options, &option_index);
     if (c == -1)
