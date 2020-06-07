@@ -109,7 +109,7 @@ enum protoCmd rx_request(struct protocol *req, int fd) {
     strcpy(req->mimetype, "image/png");
     strcpy(req->options, "");
   } else if (req->ver != 3) {
-    syslog(LOG_ERR, "Bad protocol version %d", req->ver);
+    syslog(LOG_ERR, "ERROR: Bad protocol version %d", req->ver);
     return cmdNotDone;
   }
 
@@ -131,7 +131,7 @@ enum protoCmd rx_request(struct protocol *req, int fd) {
 
   item = (struct item *)malloc(sizeof(*item));
   if (!item) {
-    syslog(LOG_ERR, "malloc failed");
+    syslog(LOG_ERR, "ERROR: malloc failed");
     return cmdNotDone;
   }
 
@@ -214,9 +214,10 @@ void process_loop(int listen_fd) {
           perror("accept()");
         } else {
           if (num_connections == MAX_CONNECTIONS) {
-            syslog(LOG_WARNING,
-                   "Connection limit(%d) reached. Dropping connection\n",
-                   MAX_CONNECTIONS);
+            syslog(
+                LOG_WARNING,
+                "WARNING: Connection limit(%d) reached. Dropping connection\n",
+                MAX_CONNECTIONS);
             close(incoming);
           } else {
             connections[num_connections++] = incoming;
@@ -259,7 +260,7 @@ void process_loop(int listen_fd) {
         }
       }
     } else {
-      syslog(LOG_ERR, "Select timeout");
+      syslog(LOG_ERR, "ERROR: Select timeout");
     }
   }
 }
@@ -282,7 +283,7 @@ void *stats_writeout_thread(void *arg) {
 
   snprintf(tmpName, sizeof(tmpName), "%s.tmp", config.stats_filename);
 
-  syslog(LOG_DEBUG, "Starting stats thread");
+  syslog(LOG_DEBUG, "DEBUG: Starting stats thread");
   while (1) {
     request_queue_copy_stats(render_request_queue, &lStats);
 
@@ -299,7 +300,7 @@ void *stats_writeout_thread(void *arg) {
 
     FILE *statfile = fopen(tmpName, "w");
     if (statfile == NULL) {
-      syslog(LOG_WARNING, "Failed to open stats file: %i", errno);
+      syslog(LOG_WARNING, "WARNING: Failed to open stats file: %i", errno);
       noFailedAttempts++;
       if (noFailedAttempts > 3) {
         syslog(LOG_ERR, "ERROR: Failed repeatedly to write stats, giving up");
@@ -333,7 +334,8 @@ void *stats_writeout_thread(void *arg) {
       }
       fclose(statfile);
       if (rename(tmpName, config.stats_filename)) {
-        syslog(LOG_WARNING, "Failed to overwrite stats file: %i", errno);
+        syslog(LOG_WARNING, "WARNING: Failed to overwrite stats file: %i",
+               errno);
         noFailedAttempts++;
         if (noFailedAttempts > 3) {
           syslog(LOG_ERR,
@@ -357,7 +359,7 @@ int client_socket_init(renderd_config *sConfig) {
   char ipstring[INET6_ADDRSTRLEN];
 
   if (sConfig->ipport > 0) {
-    syslog(LOG_INFO, "Initialising TCP/IP client socket to %s:%i",
+    syslog(LOG_INFO, "INFO: Initialising TCP/IP client socket to %s:%i",
            sConfig->iphostname, sConfig->ipport);
 
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -372,7 +374,7 @@ int client_socket_init(renderd_config *sConfig) {
 
     s = getaddrinfo(sConfig->iphostname, portnum, &hints, &result);
     if (s != 0) {
-      syslog(LOG_INFO, "failed to resolve hostname of rendering slave");
+      syslog(LOG_INFO, "INFO: failed to resolve hostname of rendering slave");
       return FD_INVALID;
     }
 
@@ -393,15 +395,17 @@ int client_socket_init(renderd_config *sConfig) {
                  rp->ai_family);
         break;
       }
-      syslog(LOG_DEBUG, "Connecting TCP socket to rendering daemon at %s",
+      syslog(LOG_DEBUG,
+             "DEBUG: Connecting TCP socket to rendering daemon at %s",
              ipstring);
       fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
       if (fd < 0)
         continue;
       if (connect(fd, rp->ai_addr, rp->ai_addrlen) != 0) {
-        syslog(LOG_INFO,
-               "failed to connect to rendering daemon (%s), trying next ip",
-               ipstring);
+        syslog(
+            LOG_INFO,
+            "INFO: failed to connect to rendering daemon (%s), trying next ip",
+            ipstring);
         close(fd);
         fd = -1;
         continue;
@@ -412,20 +416,20 @@ int client_socket_init(renderd_config *sConfig) {
     freeaddrinfo(result);
 
     if (fd < 0) {
-      syslog(LOG_WARNING, "failed to connect to %s:%i", sConfig->iphostname,
-             sConfig->ipport);
+      syslog(LOG_WARNING, "WARNING: failed to connect to %s:%i",
+             sConfig->iphostname, sConfig->ipport);
       return FD_INVALID;
     }
 
-    syslog(LOG_INFO, "socket %s:%i initialised to fd %i", sConfig->iphostname,
-           sConfig->ipport, fd);
+    syslog(LOG_INFO, "INFO: socket %s:%i initialised to fd %i",
+           sConfig->iphostname, sConfig->ipport, fd);
   } else {
-    syslog(LOG_INFO, "Initialising unix client socket on %s",
+    syslog(LOG_INFO, "INFO: Initialising unix client socket on %s",
            sConfig->socketname);
     addrU = (struct sockaddr_un *)malloc(sizeof(struct sockaddr_un));
     fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (fd < 0) {
-      syslog(LOG_WARNING, "Could not obtain socket: %i", fd);
+      syslog(LOG_WARNING, "WARNING: Could not obtain socket: %i", fd);
       free(addrU);
       return FD_INVALID;
     }
@@ -435,13 +439,15 @@ int client_socket_init(renderd_config *sConfig) {
     strncpy(addrU->sun_path, sConfig->socketname, sizeof(addrU->sun_path) - 1);
 
     if (connect(fd, (struct sockaddr *)addrU, sizeof(struct sockaddr_un)) < 0) {
-      syslog(LOG_WARNING, "socket connect failed for: %s", sConfig->socketname);
+      syslog(LOG_WARNING, "WARNING: socket connect failed for: %s",
+             sConfig->socketname);
       close(fd);
       free(addrU);
       return FD_INVALID;
     }
     free(addrU);
-    syslog(LOG_INFO, "socket %s initialised to fd %i", sConfig->socketname, fd);
+    syslog(LOG_INFO, "INFO: socket %s initialised to fd %i",
+           sConfig->socketname, fd);
   }
   return fd;
 }
@@ -453,7 +459,7 @@ int server_socket_init(renderd_config *sConfig) {
   int fd;
 
   if (sConfig->ipport > 0) {
-    syslog(LOG_INFO, "Initialising TCP/IP server socket on %s:%i",
+    syslog(LOG_INFO, "INFO: Initialising TCP/IP server socket on %s:%i",
            sConfig->iphostname, sConfig->ipport);
     fd = socket(PF_INET6, SOCK_STREAM, 0);
     if (fd < 0) {
@@ -471,7 +477,7 @@ int server_socket_init(renderd_config *sConfig) {
       exit(3);
     }
   } else {
-    syslog(LOG_INFO, "Initialising unix server socket on %s",
+    syslog(LOG_INFO, "INFO: Initialising unix server socket on %s",
            sConfig->socketname);
 
     fd = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -501,7 +507,7 @@ int server_socket_init(renderd_config *sConfig) {
     exit(4);
   }
 
-  syslog(LOG_DEBUG, "Created server socket %i", fd);
+  syslog(LOG_DEBUG, "DEBUG: Created server socket %i", fd);
 
   return fd;
 }
@@ -537,14 +543,16 @@ void *slave_thread(void *arg) {
       if (pfd == FD_INVALID) {
         if (sConfig->ipport > 0) {
           syslog(LOG_ERR,
-                 "Failed to connect to render slave %s:%i, trying again in 30 "
+                 "ERROR: Failed to connect to render slave %s:%i, trying again "
+                 "in 30 "
                  "seconds",
                  sConfig->iphostname, sConfig->ipport);
         } else {
-          syslog(LOG_ERR,
-                 "Failed to connect to render slave %s, trying again in 30 "
-                 "seconds",
-                 sConfig->socketname);
+          syslog(
+              LOG_ERR,
+              "ERROR: Failed to connect to render slave %s, trying again in 30 "
+              "seconds",
+              sConfig->socketname);
         }
         sleep(30);
         continue;
@@ -566,7 +574,8 @@ void *slave_thread(void *arg) {
 
       /*Dispatch request to slave renderd*/
       retry = 2;
-      syslog(LOG_INFO, "Dispatching request to slave thread on fd %i", pfd);
+      syslog(LOG_INFO, "INFO: Dispatching request to slave thread on fd %i",
+             pfd);
       do {
         ret_size = send_cmd(req_slave, pfd);
 
@@ -576,20 +585,22 @@ void *slave_thread(void *arg) {
         }
 
         if (errno != EPIPE) {
-          syslog(LOG_ERR,
-                 "Failed to send cmd to render slave, shutting down thread");
+          syslog(LOG_ERR, "ERROR: Failed to send cmd to render slave, shutting "
+                          "down thread");
           free(resp);
           free(req_slave);
           close(pfd);
           return NULL;
         }
 
-        syslog(LOG_WARNING, "Failed to send cmd to render slave, retrying");
+        syslog(LOG_WARNING,
+               "WARNING: Failed to send cmd to render slave, retrying");
         close(pfd);
         pfd = client_socket_init(sConfig);
         if (pfd == FD_INVALID) {
-          syslog(LOG_ERR,
-                 "Failed to re-connect to render slave, dropping request");
+          syslog(
+              LOG_ERR,
+              "ERROR: Failed to re-connect to render slave, dropping request");
           ret = cmdNotDone;
           send_response(item, ret, -1);
           break;
@@ -608,7 +619,7 @@ void *slave_thread(void *arg) {
           close(pfd);
           pfd = FD_INVALID;
           ret_size = 0;
-          syslog(LOG_ERR, "Pipe to render slave closed");
+          syslog(LOG_ERR, "ERROR: Pipe to render slave closed");
           break;
         }
         retry--;
@@ -616,12 +627,14 @@ void *slave_thread(void *arg) {
       if (ret_size < sizeof(struct protocol)) {
         if (sConfig->ipport > 0) {
           syslog(LOG_ERR,
-                 "Invalid reply from render slave %s:%i, trying again in 30 "
+                 "ERROR: Invalid reply from render slave %s:%i, trying again "
+                 "in 30 "
                  "seconds",
                  sConfig->iphostname, sConfig->ipport);
         } else {
           syslog(LOG_ERR,
-                 "Invalid reply render slave %s, trying again in 30 seconds",
+                 "ERROR: Invalid reply render slave %s, trying again in 30 "
+                 "seconds",
                  sConfig->socketname);
         }
 
@@ -634,11 +647,13 @@ void *slave_thread(void *arg) {
         if (resp->cmd != cmdDone) {
           if (sConfig->ipport > 0) {
             syslog(LOG_ERR,
-                   "Request from render slave %s:%i did not complete correctly",
+                   "ERROR: Request from render slave %s:%i did not complete "
+                   "correctly",
                    sConfig->iphostname, sConfig->ipport);
           } else {
             syslog(LOG_ERR,
-                   "Request from render slave %s did not complete correctly",
+                   "ERROR: Request from render slave %s did not complete "
+                   "correctly",
                    sConfig->socketname);
           }
           // Sleep for a while to make sure we don't overload the renderer
@@ -717,14 +732,14 @@ int main(int argc, char **argv) {
 #endif
   openlog("renderd", log_options, LOG_DAEMON);
 
-  syslog(LOG_INFO, "Rendering daemon started");
+  syslog(LOG_INFO, "INFO: Rendering daemon started");
 
   render_request_queue = request_queue_init();
   if (render_request_queue == NULL) {
-    syslog(LOG_ERR, "Failed to initialise request queue");
+    syslog(LOG_ERR, "ERROR: Failed to initialise request queue");
     exit(1);
   }
-  syslog(LOG_ERR, "Initiating request_queue");
+  syslog(LOG_ERR, "ERROR: Initiating request_queue");
 
   xmlconfigitem maps[XMLCONFIGS_MAX];
   bzero(maps, sizeof(xmlconfigitem) * XMLCONFIGS_MAX);
@@ -744,7 +759,7 @@ int main(int argc, char **argv) {
   char buffer[PATH_MAX];
   for (int section = 0; section < iniparser_getnsec(ini); section++) {
     char *name = iniparser_getsecname(ini, section);
-    syslog(LOG_INFO, "Parsing section %s\n", name);
+    syslog(LOG_INFO, "INFO: Parsing section %s\n", name);
     if (strncmp(name, "renderd", 7) && strcmp(name, "mapnik")) {
       if (config.tile_dir == NULL) {
         fprintf(stderr, "No valid (active) renderd config section available\n");
@@ -868,9 +883,9 @@ int main(int argc, char **argv) {
       if (sscanf(name, "renderd%i", &render_sec) != 1) {
         render_sec = 0;
       }
-      syslog(LOG_INFO, "Parsing render section %i\n", render_sec);
+      syslog(LOG_INFO, "INFO: Parsing render section %i\n", render_sec);
       if (render_sec >= MAX_SLAVES) {
-        syslog(LOG_ERR, "Can't handle more than %i render sections\n",
+        syslog(LOG_ERR, "ERROR: Can't handle more than %i render sections\n",
                MAX_SLAVES);
         exit(7);
       }
@@ -916,44 +931,49 @@ int main(int argc, char **argv) {
   }
 
   if (config.ipport > 0) {
-    syslog(LOG_INFO, "config renderd: ip socket=%s:%i\n", config.iphostname,
-           config.ipport);
+    syslog(LOG_INFO, "INFO: config renderd: ip socket=%s:%i\n",
+           config.iphostname, config.ipport);
   } else {
-    syslog(LOG_INFO, "config renderd: unix socketname=%s\n", config.socketname);
+    syslog(LOG_INFO, "INFO: config renderd: unix socketname=%s\n",
+           config.socketname);
   }
-  syslog(LOG_INFO, "config renderd: num_threads=%d\n", config.num_threads);
+  syslog(LOG_INFO, "INFO: config renderd: num_threads=%d\n",
+         config.num_threads);
   if (active_slave == 0) {
-    syslog(LOG_INFO, "config renderd: num_slaves=%d\n", noSlaveRenders);
+    syslog(LOG_INFO, "INFO: config renderd: num_slaves=%d\n", noSlaveRenders);
   }
-  syslog(LOG_INFO, "config renderd: tile_dir=%s\n", config.tile_dir);
-  syslog(LOG_INFO, "config renderd: stats_file=%s\n", config.stats_filename);
-  syslog(LOG_INFO, "config renderd: log_priority=%s\n", config.log_priority);
-  syslog(LOG_INFO, "config mapnik:  plugins_dir=%s\n",
+  syslog(LOG_INFO, "INFO: config renderd: tile_dir=%s\n", config.tile_dir);
+  syslog(LOG_INFO, "INFO: config renderd: stats_file=%s\n",
+         config.stats_filename);
+  syslog(LOG_INFO, "INFO: config renderd: log_priority=%s\n",
+         config.log_priority);
+  syslog(LOG_INFO, "INFO: config mapnik:  plugins_dir=%s\n",
          config.mapnik_plugins_dir);
-  syslog(LOG_INFO, "config mapnik:  font_dir=%s\n", config.mapnik_font_dir);
-  syslog(LOG_INFO, "config mapnik:  font_dir_recurse=%d\n",
+  syslog(LOG_INFO, "INFO: config mapnik:  font_dir=%s\n",
+         config.mapnik_font_dir);
+  syslog(LOG_INFO, "INFO: config mapnik:  font_dir_recurse=%d\n",
          config.mapnik_font_dir_recurse);
   for (i = 0; i < MAX_SLAVES; i++) {
     if (config_slaves[i].num_threads == 0) {
       continue;
     }
     if (i == active_slave) {
-      syslog(LOG_INFO, "config renderd(%i): Active\n", i);
+      syslog(LOG_INFO, "INFO: config renderd(%i): Active\n", i);
     }
     if (config_slaves[i].ipport > 0) {
-      syslog(LOG_INFO, "config renderd(%i): ip socket=%s:%i\n", i,
+      syslog(LOG_INFO, "INFO: config renderd(%i): ip socket=%s:%i\n", i,
              config_slaves[i].iphostname, config_slaves[i].ipport);
     } else {
-      syslog(LOG_INFO, "config renderd(%i): unix socketname=%s\n", i,
+      syslog(LOG_INFO, "INFO: config renderd(%i): unix socketname=%s\n", i,
              config_slaves[i].socketname);
     }
-    syslog(LOG_INFO, "config renderd(%i): num_threads=%d\n", i,
+    syslog(LOG_INFO, "INFO: config renderd(%i): num_threads=%d\n", i,
            config_slaves[i].num_threads);
-    syslog(LOG_INFO, "config renderd(%i): tile_dir=%s\n", i,
+    syslog(LOG_INFO, "INFO: config renderd(%i): tile_dir=%s\n", i,
            config_slaves[i].tile_dir);
-    syslog(LOG_INFO, "config renderd(%i): stats_file=%s\n", i,
+    syslog(LOG_INFO, "INFO: config renderd(%i): stats_file=%s\n", i,
            config_slaves[i].stats_filename);
-    syslog(LOG_INFO, "config renderd(%i): log_priority=%s\n", i,
+    syslog(LOG_INFO, "INFO: config renderd(%i): log_priority=%s\n", i,
            config_slaves[i].log_priority);
   }
 
@@ -970,10 +990,11 @@ int main(int argc, char **argv) {
 
   for (iconf = 0; iconf < XMLCONFIGS_MAX; ++iconf) {
     if (maps[iconf].xmlname[0] != 0) {
-      syslog(LOG_INFO,
-             "config map %d:   name(%s) file(%s) uri(%s) htcp(%s) host(%s)",
-             iconf, maps[iconf].xmlname, maps[iconf].xmlfile,
-             maps[iconf].xmluri, maps[iconf].htcpip, maps[iconf].host);
+      syslog(
+          LOG_INFO,
+          "INFO: config map %d:   name(%s) file(%s) uri(%s) htcp(%s) host(%s)",
+          iconf, maps[iconf].xmlname, maps[iconf].xmlfile, maps[iconf].xmluri,
+          maps[iconf].htcpip, maps[iconf].host);
     }
   }
 
@@ -1015,11 +1036,11 @@ int main(int argc, char **argv) {
 
   if (config.stats_filename != NULL) {
     if (pthread_create(&stats_thread, NULL, stats_writeout_thread, NULL)) {
-      syslog(LOG_WARNING, "Could not create stats writeout thread");
+      syslog(LOG_WARNING, "WARNING: Could not create stats writeout thread");
     }
   } else {
     syslog(LOG_INFO,
-           "No stats file specified in config. Stats reporting disabled");
+           "INFO: No stats file specified in config. Stats reporting disabled");
   }
 
   render_threads = (pthread_t *)malloc(sizeof(pthread_t) * config.num_threads);
