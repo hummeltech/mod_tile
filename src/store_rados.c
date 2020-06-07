@@ -82,8 +82,8 @@ static char *read_meta_data(struct storage_backend *store,
       (ctx->metadata_cache.z == z) &&
       (strcmp(ctx->metadata_cache.xmlname, xmlconfig) == 0)) {
     // log_message(STORE_LOGLVL_DEBUG, "Returning cached data for %s %i %i %i",
-    // ctx->metadata_cache.xmlname, ctx->metadata_cache.x, ctx->metadata_cache.y,
-    // ctx->metadata_cache.z);
+    // ctx->metadata_cache.xmlname, ctx->metadata_cache.x,
+    // ctx->metadata_cache.y, ctx->metadata_cache.z);
     return ctx->metadata_cache.data;
   } else {
     // log_message(STORE_LOGLVL_DEBUG, "Retrieving fresh metadata");
@@ -94,12 +94,11 @@ static char *read_meta_data(struct storage_backend *store,
     if (err < 0) {
       if (-err == ENOENT) {
         log_message(STORE_LOGLVL_DEBUG,
-                    "cannot read data from rados pool %s: %s\n", ctx->pool,
+                    "cannot read data from rados pool %s: %s", ctx->pool,
                     strerror(-err));
       } else {
-        log_message(STORE_LOGLVL_ERR,
-                    "cannot read data from rados pool %s: %s\n", ctx->pool,
-                    strerror(-err));
+        log_message(STORE_LOGLVL_ERR, "cannot read data from rados pool %s: %s",
+                    ctx->pool, strerror(-err));
       }
       ctx->metadata_cache.x = -1;
       ctx->metadata_cache.y = -1;
@@ -249,13 +248,13 @@ static int rados_metatile_write(struct storage_backend *store,
   memcpy(buf2 + sizeof(tile_stat), buf, sz);
 
   rados_xyzo_to_storagekey(xmlconfig, options, x, y, z, meta_path);
-  log_message(STORE_LOGLVL_DEBUG, "Trying to create and write a tile to %s\n",
+  log_message(STORE_LOGLVL_DEBUG, "Trying to create and write a tile to %s",
               rados_tile_storage_id(store, xmlconfig, options, x, y, z, tmp));
 
   err = rados_write_full(((struct rados_ctx *)store->storage_ctx)->io,
                          meta_path, buf2, sz2);
   if (err < 0) {
-    log_message(STORE_LOGLVL_ERR, "cannot write %s: %s\n",
+    log_message(STORE_LOGLVL_ERR, "cannot write %s: %s",
                 rados_tile_storage_id(store, xmlconfig, options, x, y, z, tmp),
                 strerror(-err));
     free(buf2);
@@ -280,7 +279,7 @@ static int rados_metatile_delete(struct storage_backend *store,
   err = rados_remove(ctx->io, meta_path);
 
   if (err < 0) {
-    log_message(STORE_LOGLVL_ERR, "failed to delete %s: %s\n",
+    log_message(STORE_LOGLVL_ERR, "failed to delete %s: %s",
                 rados_tile_storage_id(store, xmlconfig, options, x, y, z, tmp),
                 strerror(-err));
     return -1;

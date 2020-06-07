@@ -207,7 +207,7 @@ static int file_metatile_write(struct storage_backend *store,
 
   xyzo_to_meta(meta_path, sizeof(meta_path), (char *)(store->storage_ctx),
                xmlconfig, options, x, y, z);
-  log_message(STORE_LOGLVL_DEBUG, "Creating and writing a metatile to %s\n",
+  log_message(STORE_LOGLVL_DEBUG, "Creating and writing a metatile to %s",
               meta_path);
 
   tmp = malloc(sizeof(char) * strlen(meta_path) + 24);
@@ -220,7 +220,7 @@ static int file_metatile_write(struct storage_backend *store,
 
   fd = open(tmp, O_WRONLY | O_TRUNC | O_CREAT, 0666);
   if (fd < 0) {
-    log_message(STORE_LOGLVL_WARNING, "Error creating file %s: %s\n", meta_path,
+    log_message(STORE_LOGLVL_WARNING, "Error creating file %s: %s", meta_path,
                 strerror(errno));
     free(tmp);
     return -1;
@@ -228,7 +228,7 @@ static int file_metatile_write(struct storage_backend *store,
 
   res = write(fd, buf, sz);
   if (res != sz) {
-    log_message(STORE_LOGLVL_WARNING, "Error writing file %s: %s\n", meta_path,
+    log_message(STORE_LOGLVL_WARNING, "Error writing file %s: %s", meta_path,
                 strerror(errno));
     close(fd);
     free(tmp);
@@ -249,7 +249,7 @@ static int file_metatile_delete(struct storage_backend *store,
   // TODO: deal with options
   xyz_to_meta(meta_path, sizeof(meta_path), (char *)(store->storage_ctx),
               xmlconfig, x, y, z);
-  log_message(STORE_LOGLVL_DEBUG, "Deleting metatile from %s\n", meta_path);
+  log_message(STORE_LOGLVL_DEBUG, "Deleting metatile from %s", meta_path);
   return unlink(meta_path);
 }
 

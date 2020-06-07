@@ -194,7 +194,7 @@ static int memcached_metatile_write(struct storage_backend *store,
   memcpy(buf2 + sizeof(tile_stat), buf, sz);
 
   log_message(
-      STORE_LOGLVL_DEBUG, "Trying to create and write a metatile to %s\n",
+      STORE_LOGLVL_DEBUG, "Trying to create and write a metatile to %s",
       memcached_tile_storage_id(store, xmlconfig, options, x, y, z, tmp));
 
   snprintf(meta_path, PATH_MAX - 1, "%s/%d/%d/%d.meta", xmlconfig, x, y, z);

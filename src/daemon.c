@@ -51,6 +51,8 @@ int noSlaveRenders;
 
 struct request_queue *render_request_queue;
 
+int log_priority;
+
 static const char *cmdStr(enum protoCmd c) {
   switch (c) {
   case cmdIgnore:
@@ -889,6 +891,9 @@ int main(int argc, char **argv) {
       sprintf(buffer, "%s:stats_file", name);
       config_slaves[render_sec].stats_filename =
           iniparser_getstring(ini, buffer, NULL);
+      sprintf(buffer, "%s:log_priority", name);
+      config_slaves[render_sec].log_priority =
+          iniparser_getstring(ini, buffer, "error");
 
       if (render_sec == active_slave) {
         config.socketname = config_slaves[render_sec].socketname;
@@ -897,6 +902,7 @@ int main(int argc, char **argv) {
         config.num_threads = config_slaves[render_sec].num_threads;
         config.tile_dir = config_slaves[render_sec].tile_dir;
         config.stats_filename = config_slaves[render_sec].stats_filename;
+        config.log_priority = config_slaves[render_sec].log_priority;
         config.mapnik_plugins_dir = iniparser_getstring(
             ini, "mapnik:plugins_dir", (char *)MAPNIK_PLUGINS);
         config.mapnik_font_dir =
@@ -921,6 +927,7 @@ int main(int argc, char **argv) {
   }
   syslog(LOG_INFO, "config renderd: tile_dir=%s\n", config.tile_dir);
   syslog(LOG_INFO, "config renderd: stats_file=%s\n", config.stats_filename);
+  syslog(LOG_INFO, "config renderd: log_priority=%s\n", config.log_priority);
   syslog(LOG_INFO, "config mapnik:  plugins_dir=%s\n",
          config.mapnik_plugins_dir);
   syslog(LOG_INFO, "config mapnik:  font_dir=%s\n", config.mapnik_font_dir);
@@ -946,7 +953,20 @@ int main(int argc, char **argv) {
            config_slaves[i].tile_dir);
     syslog(LOG_INFO, "config renderd(%i): stats_file=%s\n", i,
            config_slaves[i].stats_filename);
+    syslog(LOG_INFO, "config renderd(%i): log_priority=%s\n", i,
+           config_slaves[i].log_priority);
   }
+
+  if (strcmp(config.log_priority, "debug") == 0) {
+    log_priority = LOG_DEBUG;
+  } else if (strcmp(config.log_priority, "info") == 0) {
+    log_priority = LOG_INFO;
+  } else if (strcmp(config.log_priority, "warning") == 0) {
+    log_priority = LOG_WARNING;
+  } else {
+    log_priority = LOG_ERR;
+  }
+  setlogmask(LOG_UPTO(log_priority));
 
   for (iconf = 0; iconf < XMLCONFIGS_MAX; ++iconf) {
     if (maps[iconf].xmlname[0] != 0) {
