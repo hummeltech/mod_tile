@@ -31,6 +31,8 @@
 #include "request_queue.h"
 #include "store.h"
 
+extern int log_priority;
+
 #ifdef HTCP_EXPIRE_CACHE
 #include <netdb.h>
 #include <sys/socket.h>
@@ -355,6 +357,22 @@ void render_init(const char *plugins_dir, const char *font_dir,
   syslog(LOG_INFO, "INFO: Renderd is using mapnik version %i.%i.%i\n",
          ((MAPNIK_VERSION) / 100000), (((MAPNIK_VERSION) / 100) % 1000),
          ((MAPNIK_VERSION) % 100));
+
+  if (log_priority >= 0) {
+    switch (log_priority) {
+    case (LOG_INFO):
+    case (LOG_WARNING):
+      mapnik::logger::instance().set_severity(mapnik::logger::warn);
+      break;
+    case (LOG_DEBUG):
+      mapnik::logger::instance().set_severity(mapnik::logger::debug);
+      break;
+    default:
+      mapnik::logger::instance().set_severity(mapnik::logger::error);
+      break;
+    }
+  }
+
 #if MAPNIK_VERSION >= 200200
   mapnik::datasource_cache::instance().register_datasources(plugins_dir);
 #else
