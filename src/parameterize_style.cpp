@@ -18,7 +18,7 @@ static void parameterize_map_language(mapnik::Map &m, char *parameter) {
   char name_replace[256];
 
   name_replace[0] = 0;
-  syslog(LOG_DEBUG, "Internationalizing map to language parameter: %s",
+  syslog(LOG_DEBUG, "DEBUG: Internationalizing map to language parameter: %s",
          parameter);
   tok = strtok(data, ",");
   if (!tok)
@@ -62,13 +62,14 @@ static void parameterize_map_language(mapnik::Map &m, char *parameter) {
 }
 
 parameterize_function_ptr init_parameterization_function(char *function_name) {
-  syslog(LOG_INFO, "Loading parameterization function for %s", function_name);
+  syslog(LOG_INFO, "INFO: Loading parameterization function for %s",
+         function_name);
   if (strcmp(function_name, "") == 0) {
     return NULL;
   } else if (strcmp(function_name, "language") == 0) {
     return parameterize_map_language;
   } else {
-    syslog(LOG_INFO, "WARNING: unknown parameterization function for %s",
+    syslog(LOG_WARNING, "WARNING: unknown parameterization function for %s",
            function_name);
   }
   return NULL;

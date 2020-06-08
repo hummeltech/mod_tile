@@ -88,7 +88,8 @@ void send_response(struct item *item, enum protoCmd rsp, int render_time) {
         ((req->cmd == cmdRender) || (req->cmd == cmdRenderPrio) ||
          (req->cmd == cmdRenderBulk))) {
       req->cmd = rsp;
-      // fprintf(stderr, "Sending message %s to %d\n", cmdStr(rsp), item->fd);
+      syslog(LOG_DEBUG, "DEBUG: Sending message %s to %d", cmdStr(rsp),
+             item->fd);
 
       send_cmd(req, item->fd);
     }
@@ -158,7 +159,8 @@ void request_exit(void) {
   // Any write to the exit pipe will trigger a graceful exit
   char c = 0;
   if (write(exit_pipe_fd, &c, sizeof(c)) < 0) {
-    fprintf(stderr, "Failed to write to the exit pipe: %s\n", strerror(errno));
+    syslog(LOG_ERR, "ERROR: Failed to write to the exit pipe: %s",
+           strerror(errno));
   }
 }
 
@@ -173,7 +175,7 @@ void process_loop(int listen_fd) {
   // A pipe is used to allow the render threads to request an exit by the main
   // process
   if (pipe(pipefds)) {
-    fprintf(stderr, "Failed to create pipe\n");
+    syslog(LOG_ERR, "ERROR: Failed to create pipe");
     return;
   }
   exit_pipe_fd = pipefds[1];
@@ -206,7 +208,7 @@ void process_loop(int listen_fd) {
         break;
       }
 
-      // printf("Data is available now on %d fds\n", num);
+      syslog(LOG_DEBUG, "DEBUG: Data is available now on %d fds", num);
       if (FD_ISSET(listen_fd, &rd)) {
         num--;
         incoming = accept(listen_fd, (struct sockaddr *)&in_addr, &in_addrlen);
@@ -463,7 +465,7 @@ int server_socket_init(renderd_config *sConfig) {
            sConfig->iphostname, sConfig->ipport);
     fd = socket(PF_INET6, SOCK_STREAM, 0);
     if (fd < 0) {
-      fprintf(stderr, "failed to create IP socket\n");
+      syslog(LOG_CRIT, "CRITICAL: failed to create IP socket");
       exit(2);
     }
     bzero(&addrI, sizeof(addrI));
@@ -471,8 +473,8 @@ int server_socket_init(renderd_config *sConfig) {
     addrI.sin6_addr = in6addr_any;
     addrI.sin6_port = htons(sConfig->ipport);
     if (bind(fd, (struct sockaddr *)&addrI, sizeof(addrI)) < 0) {
-      fprintf(stderr, "socket bind failed for: %s:%i\n", sConfig->iphostname,
-              sConfig->ipport);
+      syslog(LOG_CRIT, "CRITICAL: socket bind failed for: %s:%i",
+             sConfig->iphostname, sConfig->ipport);
       close(fd);
       exit(3);
     }
@@ -482,7 +484,7 @@ int server_socket_init(renderd_config *sConfig) {
 
     fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (fd < 0) {
-      fprintf(stderr, "failed to create unix socket\n");
+      syslog(LOG_CRIT, "CRITICAL: failed to create unix socket");
       exit(2);
     }
 
@@ -494,7 +496,8 @@ int server_socket_init(renderd_config *sConfig) {
 
     old = umask(0); // Need daemon socket to be writeable by apache
     if (bind(fd, (struct sockaddr *)&addrU, sizeof(addrU)) < 0) {
-      fprintf(stderr, "socket bind failed for: %s\n", sConfig->socketname);
+      syslog(LOG_CRIT, "CRITICAL: socket bind failed for: %s",
+             sConfig->socketname);
       close(fd);
       exit(3);
     }
@@ -502,7 +505,7 @@ int server_socket_init(renderd_config *sConfig) {
   }
 
   if (listen(fd, QUEUE_MAX) < 0) {
-    fprintf(stderr, "socket listen failed for %d\n", QUEUE_MAX);
+    syslog(LOG_CRIT, "CRITICAL: socket listen failed for %d", QUEUE_MAX);
     close(fd);
     exit(4);
   }
@@ -739,7 +742,7 @@ int main(int argc, char **argv) {
     syslog(LOG_ERR, "ERROR: Failed to initialise request queue");
     exit(1);
   }
-  syslog(LOG_ERR, "ERROR: Initiating request_queue");
+  syslog(LOG_INFO, "INFO: Initialising request_queue");
 
   xmlconfigitem maps[XMLCONFIGS_MAX];
   bzero(maps, sizeof(xmlconfigitem) * XMLCONFIGS_MAX);
@@ -762,19 +765,20 @@ int main(int argc, char **argv) {
     syslog(LOG_INFO, "INFO: Parsing section %s\n", name);
     if (strncmp(name, "renderd", 7) && strcmp(name, "mapnik")) {
       if (config.tile_dir == NULL) {
-        fprintf(stderr, "No valid (active) renderd config section available\n");
+        syslog(LOG_CRIT,
+               "CRITICAL: No valid (active) renderd config section available");
         exit(7);
       }
       /* this is a map section */
       iconf++;
       if (iconf >= XMLCONFIGS_MAX) {
-        fprintf(stderr, "Config: more than %d configurations found\n",
-                XMLCONFIGS_MAX);
+        syslog(LOG_CRIT, "CRITICAL: Config: more than %d configurations found",
+               XMLCONFIGS_MAX);
         exit(7);
       }
 
       if (strlen(name) >= (XMLCONFIG_MAX - 1)) {
-        fprintf(stderr, "XML name too long: %s\n", name);
+        syslog(LOG_CRIT, "CRITICAL: XML name too long: %s", name);
         exit(7);
       }
 
@@ -783,7 +787,7 @@ int main(int argc, char **argv) {
       sprintf(buffer, "%s:uri", name);
       char *ini_uri = iniparser_getstring(ini, buffer, (char *)"");
       if (strlen(ini_uri) >= (PATH_MAX - 1)) {
-        fprintf(stderr, "URI too long: %s\n", ini_uri);
+        syslog(LOG_CRIT, "CRITICAL: URI too long: %s", ini_uri);
         exit(7);
       }
       strcpy(maps[iconf].xmluri, ini_uri);
@@ -791,7 +795,7 @@ int main(int argc, char **argv) {
       sprintf(buffer, "%s:xml", name);
       char *ini_xmlpath = iniparser_getstring(ini, buffer, (char *)"");
       if (strlen(ini_xmlpath) >= (PATH_MAX - 1)) {
-        fprintf(stderr, "XML path too long: %s\n", ini_xmlpath);
+        syslog(LOG_CRIT, "CRITICAL: XML path too long: %s", ini_xmlpath);
         exit(7);
       }
       strcpy(maps[iconf].xmlfile, ini_xmlpath);
@@ -799,7 +803,7 @@ int main(int argc, char **argv) {
       sprintf(buffer, "%s:host", name);
       char *ini_hostname = iniparser_getstring(ini, buffer, (char *)"");
       if (strlen(ini_hostname) >= (PATH_MAX - 1)) {
-        fprintf(stderr, "Host name too long: %s\n", ini_hostname);
+        syslog(LOG_CRIT, "CRITICAL: Host name too long: %s", ini_hostname);
         exit(7);
       }
       strcpy(maps[iconf].host, ini_hostname);
@@ -807,7 +811,7 @@ int main(int argc, char **argv) {
       sprintf(buffer, "%s:htcphost", name);
       char *ini_htcpip = iniparser_getstring(ini, buffer, (char *)"");
       if (strlen(ini_htcpip) >= (PATH_MAX - 1)) {
-        fprintf(stderr, "HTCP host name too long: %s\n", ini_htcpip);
+        syslog(LOG_CRIT, "CRITICAL: HTCP host name too long: %s", ini_htcpip);
         exit(7);
       }
       strcpy(maps[iconf].htcpip, ini_htcpip);
@@ -816,7 +820,7 @@ int main(int argc, char **argv) {
       char *ini_tilesize = iniparser_getstring(ini, buffer, (char *)"256");
       maps[iconf].tile_px_size = atoi(ini_tilesize);
       if (maps[iconf].tile_px_size < 1) {
-        fprintf(stderr, "Tile size is invalid: %s\n", ini_tilesize);
+        syslog(LOG_CRIT, "CRITICAL: Tile size is invalid: %s", ini_tilesize);
         exit(7);
       }
 
@@ -824,7 +828,7 @@ int main(int argc, char **argv) {
       char *ini_scale = iniparser_getstring(ini, buffer, (char *)"1.0");
       maps[iconf].scale_factor = atof(ini_scale);
       if (maps[iconf].scale_factor < 0.1 || maps[iconf].scale_factor > 8.0) {
-        fprintf(stderr, "Scale factor is invalid: %s\n", ini_scale);
+        syslog(LOG_CRIT, "CRITICAL: Scale factor is invalid: %s", ini_scale);
         exit(7);
       }
 
@@ -832,7 +836,7 @@ int main(int argc, char **argv) {
       char *ini_tiledir =
           iniparser_getstring(ini, buffer, (char *)config.tile_dir);
       if (strlen(ini_tiledir) >= (PATH_MAX - 1)) {
-        fprintf(stderr, "Tiledir too long: %s\n", ini_tiledir);
+        syslog(LOG_CRIT, "CRITICAL: Tiledir too long: %s", ini_tiledir);
         exit(7);
       }
       strcpy(maps[iconf].tile_dir, ini_tiledir);
@@ -841,10 +845,10 @@ int main(int argc, char **argv) {
       char *ini_maxzoom = iniparser_getstring(ini, buffer, "18");
       maps[iconf].max_zoom = atoi(ini_maxzoom);
       if (maps[iconf].max_zoom > MAX_ZOOM) {
-        fprintf(stderr,
-                "Specified max zoom (%i) is to large. Renderd currently only "
-                "supports up to zoom level %i\n",
-                maps[iconf].max_zoom, MAX_ZOOM);
+        syslog(LOG_CRIT,
+               "CRITICAL: Specified max zoom (%i) is too large. Renderd "
+               "currently only supports up to zoom level %i",
+               maps[iconf].max_zoom, MAX_ZOOM);
         exit(7);
       }
 
@@ -852,23 +856,25 @@ int main(int argc, char **argv) {
       char *ini_minzoom = iniparser_getstring(ini, buffer, "0");
       maps[iconf].min_zoom = atoi(ini_minzoom);
       if (maps[iconf].min_zoom < 0) {
-        fprintf(stderr,
-                "Specified min zoom (%i) is to small. Minimum zoom level has "
-                "to be greater or equal to 0\n",
-                maps[iconf].min_zoom);
+        syslog(LOG_CRIT,
+               "CRITICAL: Specified min zoom (%i) is too small. Minimum zoom "
+               "level has to be greater or equal to 0",
+               maps[iconf].min_zoom);
         exit(7);
       }
       if (maps[iconf].min_zoom > maps[iconf].max_zoom) {
-        fprintf(stderr,
-                "Specified min zoom (%i) is larger than max zoom (%i).\n",
-                maps[iconf].min_zoom, maps[iconf].max_zoom);
+        syslog(
+            LOG_CRIT,
+            "CRITICAL: Specified min zoom (%i) is larger than max zoom (%i).",
+            maps[iconf].min_zoom, maps[iconf].max_zoom);
         exit(7);
       }
 
       sprintf(buffer, "%s:parameterize_style", name);
       char *ini_parameterize = iniparser_getstring(ini, buffer, "");
       if (strlen(ini_parameterize) >= (PATH_MAX - 1)) {
-        fprintf(stderr, "Parameterize_style too long: %s\n", ini_parameterize);
+        syslog(LOG_CRIT, "CRITICAL: Parameterize_style too long: %s",
+               ini_parameterize);
         exit(7);
       }
       strcpy(maps[iconf].parameterization, ini_parameterize);
@@ -1001,16 +1007,16 @@ int main(int argc, char **argv) {
   fd = server_socket_init(&config);
 #if 0
     if (fcntl(fd, F_SETFD, O_RDWR | O_NONBLOCK) < 0) {
-        fprintf(stderr, "setting socket non-block failed\n");
-        close(fd);
-        exit(5);
+      syslog(LOG_CRIT, "CRITICAL: setting socket non-block failed");
+      close(fd);
+      exit(5);
     }
 #endif
 
   // sigPipeAction.sa_handler = pipe_handler;
   sigPipeAction.sa_handler = SIG_IGN;
   if (sigaction(SIGPIPE, &sigPipeAction, NULL) < 0) {
-    fprintf(stderr, "failed to register signal handler\n");
+    syslog(LOG_CRIT, "CRITICAL: failed to register signal handler");
     close(fd);
     exit(6);
   }
@@ -1021,10 +1027,10 @@ int main(int argc, char **argv) {
   /* unless the command line said to run in foreground mode, fork and detach
    * from terminal */
   if (foreground) {
-    fprintf(stderr, "Running in foreground mode...\n");
+    syslog(LOG_INFO, "INFO: Running in foreground mode...");
   } else {
     if (daemon(0, 0) != 0) {
-      fprintf(stderr, "can't daemonize: %s\n", strerror(errno));
+      syslog(LOG_ERR, "ERROR: can't daemonize: %s", strerror(errno));
     }
     /* write pid file */
     FILE *pidfile = fopen(PIDFILE, "w");
@@ -1047,7 +1053,7 @@ int main(int argc, char **argv) {
 
   for (i = 0; i < config.num_threads; i++) {
     if (pthread_create(&render_threads[i], NULL, render_thread, (void *)maps)) {
-      fprintf(stderr, "error spawning render thread\n");
+      syslog(LOG_CRIT, "ERROR: error spawning render thread");
       close(fd);
       exit(7);
     }
@@ -1061,7 +1067,7 @@ int main(int argc, char **argv) {
       for (j = 0; j < config_slaves[i].num_threads; j++) {
         if (pthread_create(&slave_threads[k++], NULL, slave_thread,
                            (void *)&config_slaves[i])) {
-          fprintf(stderr, "error spawning render thread\n");
+          syslog(LOG_CRIT, "ERROR: error spawning render thread");
           close(fd);
           exit(7);
         }
