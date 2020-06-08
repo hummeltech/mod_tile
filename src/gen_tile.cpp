@@ -421,9 +421,10 @@ void *render_thread(void *arg) {
         maps[iMaxConfigs].prj =
             get_projection(maps[iMaxConfigs].map.srs().c_str());
       } catch (std::exception const &ex) {
-        syslog(LOG_ERR,
-               "ERROR: An error occurred while loading the map layer '%s': %s\n",
-               maps[iMaxConfigs].xmlname, ex.what());
+        syslog(
+            LOG_ERR,
+            "ERROR: An error occurred while loading the map layer '%s': %s\n",
+            maps[iMaxConfigs].xmlname, ex.what());
         maps[iMaxConfigs].ok = 0;
       } catch (...) {
         syslog(
