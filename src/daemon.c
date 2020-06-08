@@ -88,7 +88,7 @@ void send_response(struct item *item, enum protoCmd rsp, int render_time) {
         ((req->cmd == cmdRender) || (req->cmd == cmdRenderPrio) ||
          (req->cmd == cmdRenderBulk))) {
       req->cmd = rsp;
-      syslog(LOG_DEBUG, "DEBUG: Sending message %s to %d", cmdStr(rsp),
+      syslog(LOG_DEBUG, "DEBUG: Sending message %s to %d\n", cmdStr(rsp),
              item->fd);
 
       send_cmd(req, item->fd);
@@ -110,7 +110,7 @@ enum protoCmd rx_request(struct protocol *req, int fd) {
     strcpy(req->mimetype, "image/png");
     strcpy(req->options, "");
   } else if (req->ver != 3) {
-    syslog(LOG_ERR, "ERROR: Bad protocol version %d", req->ver);
+    syslog(LOG_ERR, "ERROR: Bad protocol version %d\n", req->ver);
     return cmdNotDone;
   }
 
@@ -159,7 +159,7 @@ void request_exit(void) {
   // Any write to the exit pipe will trigger a graceful exit
   char c = 0;
   if (write(exit_pipe_fd, &c, sizeof(c)) < 0) {
-    syslog(LOG_ERR, "ERROR: Failed to write to the exit pipe: %s",
+    syslog(LOG_ERR, "ERROR: Failed to write to the exit pipe: %s\n",
            strerror(errno));
   }
 }
@@ -302,7 +302,7 @@ void *stats_writeout_thread(void *arg) {
 
     FILE *statfile = fopen(tmpName, "w");
     if (statfile == NULL) {
-      syslog(LOG_WARNING, "WARNING: Failed to open stats file: %i", errno);
+      syslog(LOG_WARNING, "WARNING: Failed to open stats file: %i\n", errno);
       noFailedAttempts++;
       if (noFailedAttempts > 3) {
         syslog(LOG_ERR, "ERROR: Failed repeatedly to write stats, giving up");
@@ -336,7 +336,7 @@ void *stats_writeout_thread(void *arg) {
       }
       fclose(statfile);
       if (rename(tmpName, config.stats_filename)) {
-        syslog(LOG_WARNING, "WARNING: Failed to overwrite stats file: %i",
+        syslog(LOG_WARNING, "WARNING: Failed to overwrite stats file: %i\n",
                errno);
         noFailedAttempts++;
         if (noFailedAttempts > 3) {
@@ -361,7 +361,7 @@ int client_socket_init(renderd_config *sConfig) {
   char ipstring[INET6_ADDRSTRLEN];
 
   if (sConfig->ipport > 0) {
-    syslog(LOG_INFO, "INFO: Initialising TCP/IP client socket to %s:%i",
+    syslog(LOG_INFO, "INFO: Initialising TCP/IP client socket to %s:%i\n",
            sConfig->iphostname, sConfig->ipport);
 
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -398,7 +398,7 @@ int client_socket_init(renderd_config *sConfig) {
         break;
       }
       syslog(LOG_DEBUG,
-             "DEBUG: Connecting TCP socket to rendering daemon at %s",
+             "DEBUG: Connecting TCP socket to rendering daemon at %s\n",
              ipstring);
       fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
       if (fd < 0)
@@ -418,20 +418,20 @@ int client_socket_init(renderd_config *sConfig) {
     freeaddrinfo(result);
 
     if (fd < 0) {
-      syslog(LOG_WARNING, "WARNING: failed to connect to %s:%i",
+      syslog(LOG_WARNING, "WARNING: failed to connect to %s:%i\n",
              sConfig->iphostname, sConfig->ipport);
       return FD_INVALID;
     }
 
-    syslog(LOG_INFO, "INFO: socket %s:%i initialised to fd %i",
+    syslog(LOG_INFO, "INFO: socket %s:%i initialised to fd %i\n",
            sConfig->iphostname, sConfig->ipport, fd);
   } else {
-    syslog(LOG_INFO, "INFO: Initialising unix client socket on %s",
+    syslog(LOG_INFO, "INFO: Initialising unix client socket on %s\n",
            sConfig->socketname);
     addrU = (struct sockaddr_un *)malloc(sizeof(struct sockaddr_un));
     fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (fd < 0) {
-      syslog(LOG_WARNING, "WARNING: Could not obtain socket: %i", fd);
+      syslog(LOG_WARNING, "WARNING: Could not obtain socket: %i\n", fd);
       free(addrU);
       return FD_INVALID;
     }
@@ -441,14 +441,14 @@ int client_socket_init(renderd_config *sConfig) {
     strncpy(addrU->sun_path, sConfig->socketname, sizeof(addrU->sun_path) - 1);
 
     if (connect(fd, (struct sockaddr *)addrU, sizeof(struct sockaddr_un)) < 0) {
-      syslog(LOG_WARNING, "WARNING: socket connect failed for: %s",
+      syslog(LOG_WARNING, "WARNING: socket connect failed for: %s\n",
              sConfig->socketname);
       close(fd);
       free(addrU);
       return FD_INVALID;
     }
     free(addrU);
-    syslog(LOG_INFO, "INFO: socket %s initialised to fd %i",
+    syslog(LOG_INFO, "INFO: socket %s initialised to fd %i\n",
            sConfig->socketname, fd);
   }
   return fd;
@@ -461,7 +461,7 @@ int server_socket_init(renderd_config *sConfig) {
   int fd;
 
   if (sConfig->ipport > 0) {
-    syslog(LOG_INFO, "INFO: Initialising TCP/IP server socket on %s:%i",
+    syslog(LOG_INFO, "INFO: Initialising TCP/IP server socket on %s:%i\n",
            sConfig->iphostname, sConfig->ipport);
     fd = socket(PF_INET6, SOCK_STREAM, 0);
     if (fd < 0) {
@@ -473,13 +473,13 @@ int server_socket_init(renderd_config *sConfig) {
     addrI.sin6_addr = in6addr_any;
     addrI.sin6_port = htons(sConfig->ipport);
     if (bind(fd, (struct sockaddr *)&addrI, sizeof(addrI)) < 0) {
-      syslog(LOG_CRIT, "CRITICAL: socket bind failed for: %s:%i",
+      syslog(LOG_CRIT, "CRITICAL: socket bind failed for: %s:%i\n",
              sConfig->iphostname, sConfig->ipport);
       close(fd);
       exit(3);
     }
   } else {
-    syslog(LOG_INFO, "INFO: Initialising unix server socket on %s",
+    syslog(LOG_INFO, "INFO: Initialising unix server socket on %s\n",
            sConfig->socketname);
 
     fd = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -496,7 +496,7 @@ int server_socket_init(renderd_config *sConfig) {
 
     old = umask(0); // Need daemon socket to be writeable by apache
     if (bind(fd, (struct sockaddr *)&addrU, sizeof(addrU)) < 0) {
-      syslog(LOG_CRIT, "CRITICAL: socket bind failed for: %s",
+      syslog(LOG_CRIT, "CRITICAL: socket bind failed for: %s\n",
              sConfig->socketname);
       close(fd);
       exit(3);
@@ -505,12 +505,12 @@ int server_socket_init(renderd_config *sConfig) {
   }
 
   if (listen(fd, QUEUE_MAX) < 0) {
-    syslog(LOG_CRIT, "CRITICAL: socket listen failed for %d", QUEUE_MAX);
+    syslog(LOG_CRIT, "CRITICAL: socket listen failed for %d\n", QUEUE_MAX);
     close(fd);
     exit(4);
   }
 
-  syslog(LOG_DEBUG, "DEBUG: Created server socket %i", fd);
+  syslog(LOG_DEBUG, "DEBUG: Created server socket %i\n", fd);
 
   return fd;
 }
@@ -577,7 +577,7 @@ void *slave_thread(void *arg) {
 
       /*Dispatch request to slave renderd*/
       retry = 2;
-      syslog(LOG_INFO, "INFO: Dispatching request to slave thread on fd %i",
+      syslog(LOG_INFO, "INFO: Dispatching request to slave thread on fd %i\n",
              pfd);
       do {
         ret_size = send_cmd(req_slave, pfd);
@@ -778,7 +778,7 @@ int main(int argc, char **argv) {
       }
 
       if (strlen(name) >= (XMLCONFIG_MAX - 1)) {
-        syslog(LOG_CRIT, "CRITICAL: XML name too long: %s", name);
+        syslog(LOG_CRIT, "CRITICAL: XML name too long: %s\n", name);
         exit(7);
       }
 
@@ -787,7 +787,7 @@ int main(int argc, char **argv) {
       sprintf(buffer, "%s:uri", name);
       char *ini_uri = iniparser_getstring(ini, buffer, (char *)"");
       if (strlen(ini_uri) >= (PATH_MAX - 1)) {
-        syslog(LOG_CRIT, "CRITICAL: URI too long: %s", ini_uri);
+        syslog(LOG_CRIT, "CRITICAL: URI too long: %s\n", ini_uri);
         exit(7);
       }
       strcpy(maps[iconf].xmluri, ini_uri);
@@ -795,7 +795,7 @@ int main(int argc, char **argv) {
       sprintf(buffer, "%s:xml", name);
       char *ini_xmlpath = iniparser_getstring(ini, buffer, (char *)"");
       if (strlen(ini_xmlpath) >= (PATH_MAX - 1)) {
-        syslog(LOG_CRIT, "CRITICAL: XML path too long: %s", ini_xmlpath);
+        syslog(LOG_CRIT, "CRITICAL: XML path too long: %s\n", ini_xmlpath);
         exit(7);
       }
       strcpy(maps[iconf].xmlfile, ini_xmlpath);
@@ -803,7 +803,7 @@ int main(int argc, char **argv) {
       sprintf(buffer, "%s:host", name);
       char *ini_hostname = iniparser_getstring(ini, buffer, (char *)"");
       if (strlen(ini_hostname) >= (PATH_MAX - 1)) {
-        syslog(LOG_CRIT, "CRITICAL: Host name too long: %s", ini_hostname);
+        syslog(LOG_CRIT, "CRITICAL: Host name too long: %s\n", ini_hostname);
         exit(7);
       }
       strcpy(maps[iconf].host, ini_hostname);
@@ -811,7 +811,7 @@ int main(int argc, char **argv) {
       sprintf(buffer, "%s:htcphost", name);
       char *ini_htcpip = iniparser_getstring(ini, buffer, (char *)"");
       if (strlen(ini_htcpip) >= (PATH_MAX - 1)) {
-        syslog(LOG_CRIT, "CRITICAL: HTCP host name too long: %s", ini_htcpip);
+        syslog(LOG_CRIT, "CRITICAL: HTCP host name too long: %s\n", ini_htcpip);
         exit(7);
       }
       strcpy(maps[iconf].htcpip, ini_htcpip);
@@ -820,7 +820,7 @@ int main(int argc, char **argv) {
       char *ini_tilesize = iniparser_getstring(ini, buffer, (char *)"256");
       maps[iconf].tile_px_size = atoi(ini_tilesize);
       if (maps[iconf].tile_px_size < 1) {
-        syslog(LOG_CRIT, "CRITICAL: Tile size is invalid: %s", ini_tilesize);
+        syslog(LOG_CRIT, "CRITICAL: Tile size is invalid: %s\n", ini_tilesize);
         exit(7);
       }
 
@@ -828,7 +828,7 @@ int main(int argc, char **argv) {
       char *ini_scale = iniparser_getstring(ini, buffer, (char *)"1.0");
       maps[iconf].scale_factor = atof(ini_scale);
       if (maps[iconf].scale_factor < 0.1 || maps[iconf].scale_factor > 8.0) {
-        syslog(LOG_CRIT, "CRITICAL: Scale factor is invalid: %s", ini_scale);
+        syslog(LOG_CRIT, "CRITICAL: Scale factor is invalid: %s\n", ini_scale);
         exit(7);
       }
 
@@ -836,7 +836,7 @@ int main(int argc, char **argv) {
       char *ini_tiledir =
           iniparser_getstring(ini, buffer, (char *)config.tile_dir);
       if (strlen(ini_tiledir) >= (PATH_MAX - 1)) {
-        syslog(LOG_CRIT, "CRITICAL: Tiledir too long: %s", ini_tiledir);
+        syslog(LOG_CRIT, "CRITICAL: Tiledir too long: %s\n", ini_tiledir);
         exit(7);
       }
       strcpy(maps[iconf].tile_dir, ini_tiledir);
@@ -847,7 +847,7 @@ int main(int argc, char **argv) {
       if (maps[iconf].max_zoom > MAX_ZOOM) {
         syslog(LOG_CRIT,
                "CRITICAL: Specified max zoom (%i) is too large. Renderd "
-               "currently only supports up to zoom level %i",
+               "currently only supports up to zoom level %i\n",
                maps[iconf].max_zoom, MAX_ZOOM);
         exit(7);
       }
@@ -873,7 +873,7 @@ int main(int argc, char **argv) {
       sprintf(buffer, "%s:parameterize_style", name);
       char *ini_parameterize = iniparser_getstring(ini, buffer, "");
       if (strlen(ini_parameterize) >= (PATH_MAX - 1)) {
-        syslog(LOG_CRIT, "CRITICAL: Parameterize_style too long: %s",
+        syslog(LOG_CRIT, "CRITICAL: Parameterize_style too long: %s\n",
                ini_parameterize);
         exit(7);
       }
@@ -1030,7 +1030,7 @@ int main(int argc, char **argv) {
     syslog(LOG_INFO, "INFO: Running in foreground mode...");
   } else {
     if (daemon(0, 0) != 0) {
-      syslog(LOG_ERR, "ERROR: can't daemonize: %s", strerror(errno));
+      syslog(LOG_ERR, "ERROR: can't daemonize: %s\n", strerror(errno));
     }
     /* write pid file */
     FILE *pidfile = fopen(PIDFILE, "w");

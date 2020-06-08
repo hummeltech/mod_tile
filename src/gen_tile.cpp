@@ -134,7 +134,7 @@ struct projectionconfig *get_projection(const char *srs) {
   } else {
     syslog(LOG_WARNING,
            "WARNING: Unknown projection string, using web mercator as never "
-           "the less. %s",
+           "the less. %s\n",
            srs);
     prj = (struct projectionconfig *)malloc(sizeof(struct projectionconfig));
     prj->bound_x0 = -20037508.3428;
@@ -154,7 +154,7 @@ static void load_fonts(const char *font_dir, int recurse) {
   char path[PATH_MAX]; // FIXME: Eats lots of stack space when recursive
 
   if (!fonts) {
-    syslog(LOG_CRIT, "CRITICAL: Unable to open font directory: %s", font_dir);
+    syslog(LOG_CRIT, "CRITICAL: Unable to open font directory: %s\n", font_dir);
     return;
   }
 
@@ -174,7 +174,7 @@ static void load_fonts(const char *font_dir, int recurse) {
     }
     p = strrchr(path, '.');
     if (p && (!strcmp(p, ".ttf") || !strcmp(p, ".otf") || !strcmp(p, ".ttc"))) {
-      syslog(LOG_DEBUG, "DEBUG: Loading font: %s", path);
+      syslog(LOG_DEBUG, "DEBUG: Loading font: %s\n", path);
       freetype_engine::register_font(path);
     }
   }
@@ -281,10 +281,10 @@ static enum protoCmd render(struct xmlmapconfig *map, int x, int y, int z,
                                                map->scale);
     ren.apply();
   } catch (std::exception const &ex) {
-    syslog(LOG_ERR, "ERROR: failed to render TILE %s %d %d-%d %d-%d",
+    syslog(LOG_ERR, "ERROR: failed to render TILE %s %d %d-%d %d-%d\n",
            map->xmlname, z, x, x + render_size_tx - 1, y,
            y + render_size_ty - 1);
-    syslog(LOG_ERR, "ERROR:    reason: %s", ex.what());
+    syslog(LOG_ERR, "ERROR:    reason: %s\n", ex.what());
     return cmdNotDone;
   }
 
@@ -352,7 +352,7 @@ static enum protoCmd render(Map &m, const char *tile_dir, char *xmlname,
 
 void render_init(const char *plugins_dir, const char *font_dir,
                  int font_dir_recurse) {
-  syslog(LOG_INFO, "INFO: Renderd is using mapnik version %i.%i.%i",
+  syslog(LOG_INFO, "INFO: Renderd is using mapnik version %i.%i.%i\n",
          ((MAPNIK_VERSION) / 100000), (((MAPNIK_VERSION) / 100) % 1000),
          ((MAPNIK_VERSION) % 100));
 #if MAPNIK_VERSION >= 200200
@@ -404,7 +404,7 @@ void *render_thread(void *arg) {
             get_projection(maps[iMaxConfigs].map.srs().c_str());
       } catch (std::exception const &ex) {
         syslog(LOG_ERR,
-               "ERROR: An error occurred while loading the map layer '%s': %s",
+               "ERROR: An error occurred while loading the map layer '%s': %s\n",
                maps[iMaxConfigs].xmlname, ex.what());
         maps[iMaxConfigs].ok = 0;
       } catch (...) {
@@ -499,7 +499,7 @@ void *render_thread(void *arg) {
                 } catch (std::exception const &ex) {
                   syslog(LOG_ERR,
                          "ERROR: Received exception when writing metatile to "
-                         "disk: %s",
+                         "disk: %s\n",
                          ex.what());
                   ret = cmdNotDone;
                 } catch (...) {
@@ -541,7 +541,7 @@ void *render_thread(void *arg) {
         }
       }
       if (i == iMaxConfigs) {
-        syslog(LOG_ERR, "ERROR: No map for: %s", req->xmlname);
+        syslog(LOG_ERR, "ERROR: No map for: %s\n", req->xmlname);
       }
     } else {
       sleep(1); // TODO: Use an event to indicate there are new requests

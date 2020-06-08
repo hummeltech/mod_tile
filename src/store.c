@@ -38,16 +38,16 @@ void log_message(int log_lvl, const char *format, ...) {
     if (log_priority >= 0) {
       switch (log_lvl) {
       case STORE_LOGLVL_DEBUG:
-        syslog(LOG_DEBUG, "DEBUG: %s", msg);
+        syslog(LOG_DEBUG, "DEBUG: %s\n", msg);
         break;
       case STORE_LOGLVL_INFO:
-        syslog(LOG_INFO, "INFO: %s", msg);
+        syslog(LOG_INFO, "INFO: %s\n", msg);
         break;
       case STORE_LOGLVL_WARNING:
-        syslog(LOG_WARNING, "WARNING: %s", msg);
+        syslog(LOG_WARNING, "WARNING: %s\n", msg);
         break;
       case STORE_LOGLVL_ERR:
-        syslog(LOG_ERR, "ERROR: %s", msg);
+        syslog(LOG_ERR, "ERROR: %s\n", msg);
         break;
       }
     } else {
