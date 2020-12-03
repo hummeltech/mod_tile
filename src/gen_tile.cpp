@@ -131,7 +131,7 @@ struct projectionconfig * get_projection(const char * srs) {
         prj->aspect_x = 1;
         prj->aspect_y = 1;
     } else if (strcmp(srs, "+proj=eqc +lat_ts=0 +lat_0=0 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs") == 0) {
-        syslog(LOG_DEBUG, "DEBUG: Using web mercator projection settings");
+        syslog(LOG_DEBUG, "DEBUG: Using plate carree projection settings");
         prj = (struct projectionconfig *)malloc(sizeof(struct projectionconfig));
         prj->bound_x0 = -20037508.3428;
         prj->bound_x1 =  20037508.3428;
