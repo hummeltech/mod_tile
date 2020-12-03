@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2007 - 2020 by mod_tile contributors (see AUTHORS file)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; If not, see http://www.gnu.org/licenses/.
+ */
+
 #ifndef RENDER_CONFIG_H
 #define RENDER_CONFIG_H
 
@@ -8,7 +25,7 @@
 
 // With directory hashing enabled we rewrite the path so that tiles are really stored here instead
 #define DIRECTORY_HASH
-#define HASH_PATH "/var/lib/mod_tile"
+#define HASH_PATH "/var/cache/renderd/tiles"
 
 // TILE_PATH is where Openlayers with try to fetch the "z/x/y.png" tiles from
 // this is now only used if DIRECTORY_HASH is undefined
