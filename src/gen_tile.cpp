@@ -236,7 +236,7 @@ static int check_xyz(int x, int y, int z, struct xmlmapconfig * map) {
     }
 
     if (oob)
-        syslog(LOG_INFO, "INFO: got bad co-ords: x(%d) y(%d) z(%d)\n", x, y, z);
+        syslog(LOG_INFO, "INFO: got bad co-ords: x(%d) y(%d) z(%d)", x, y, z);
 
     return !oob;
 }
@@ -252,7 +252,7 @@ mapnik::box2d<double> tile2prjbounds(struct projectionconfig * prj, int x, int y
     double p1x = prj->bound_x0 + (prj->bound_x1 - prj->bound_x0)* (((double)x + render_size_tx) / (double)(prj->aspect_x * 1<<z));
     double p1y = (prj->bound_y1 - (prj->bound_y1 - prj->bound_y0)* ((double)y / (double)(prj->aspect_y * 1<<z)));
 
-    syslog(LOG_DEBUG, "DEBUG: Rendering projected coordinates %i %i %i -> %f|%f %f|%f to a %i x %i tile\n", z, x, y, p0x, p0y, p1x, p1y, render_size_tx, render_size_ty);
+    syslog(LOG_DEBUG, "DEBUG: Rendering projected coordinates %i %i %i -> %f|%f %f|%f to a %i x %i tile", z, x, y, p0x, p0y, p1x, p1y, render_size_tx, render_size_ty);
 
     mapnik::box2d<double> bbox(p0x, p0y, p1x,p1y);
     return  bbox;
