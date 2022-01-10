@@ -52,9 +52,6 @@ int main(int argc, char **argv)
 
 struct keepalive_settings keepalives;
 
-static const int minZoom = 0;
-static const int maxZoom = 18;
-
 #if 1
 static double boundx0 = -0.5;
 static double boundy0 = 51.25;

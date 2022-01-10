@@ -121,35 +121,33 @@ int main(int argc, char **argv)
 	struct stat_info s;
 
 	memset(&keepalives, 0, sizeof(struct keepalive_settings));
-	keepalives.time = 60;
-	keepalives.interval = 60;
-	keepalives.probes = 9;
 
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
-			{"all",         no_argument,       0, 'a'},
-			{"force",       no_argument,       0, 'f'},
-			{"keepalives",  no_argument,       0, 'k'},
-			{"map",         required_argument, 0, 'm'},
-			{"max-load",    required_argument, 0, 'l'},
-			{"max-x",       required_argument, 0, 'X'},
-			{"max-y",       required_argument, 0, 'Y'},
-			{"max-zoom",    required_argument, 0, 'Z'},
-			{"min-x",       required_argument, 0, 'x'},
-			{"min-y",       required_argument, 0, 'y'},
-			{"min-zoom",    required_argument, 0, 'z'},
-			{"num-threads", required_argument, 0, 'n'},
-			{"socket",      required_argument, 0, 's'},
-			{"tile-dir",    required_argument, 0, 't'},
-			{"verbose",     no_argument,       0, 'v'},
+			{"all",              no_argument,       0, 'a'},
+			{"force",            no_argument,       0, 'f'},
+			{"keepalive-config", required_argument, 0, 'K'},
+			{"keepalives",       no_argument,       0, 'k'},
+			{"map",              required_argument, 0, 'm'},
+			{"max-load",         required_argument, 0, 'l'},
+			{"max-x",            required_argument, 0, 'X'},
+			{"max-y",            required_argument, 0, 'Y'},
+			{"max-zoom",         required_argument, 0, 'Z'},
+			{"min-x",            required_argument, 0, 'x'},
+			{"min-y",            required_argument, 0, 'y'},
+			{"min-zoom",         required_argument, 0, 'z'},
+			{"num-threads",      required_argument, 0, 'n'},
+			{"socket",           required_argument, 0, 's'},
+			{"tile-dir",         required_argument, 0, 't'},
+			{"verbose",          no_argument,       0, 'v'},
 
 			{"help",        no_argument,       0, 'h'},
 			{"version",     no_argument,       0, 'V'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "afkm:l:X:Y:Z:x:y:z:n:s:t:vhV", long_options, &option_index);
+		c = getopt_long(argc, argv, "afK:km:l:X:Y:Z:x:y:z:n:s:t:vhV", long_options, &option_index);
 
 		if (c == -1) {
 			break;
@@ -168,6 +166,50 @@ int main(int argc, char **argv)
 			case 'k':		/* -k, --keepalives */
 			  keepalives.enabled = 1;
 				break;
+
+			case 'K': {  /* --keepalive-config=<t>:<intvl>:<count> */
+				char * confstr = strdup(optarg);
+				if (!strlen(confstr)) {
+					fprintf(stderr, "No parameters provided for the TCP keepalive config\n");
+					return 1;
+				}
+
+				int val_count = 0;
+				const int val_count_expected = 3;
+				char * val[val_count_expected];
+				char * p = strtok(confstr, ":");
+				while (p != NULL) {
+					val[ val_count++ ] = p;
+					p = strtok(NULL, ":");
+				}
+
+				if (val_count != val_count_expected) {
+					fprintf(stderr, "Must provide exactly %d instead of %d arguments to --kepalive-config. See help for details.\n", val_count_expected, val_count);
+					return 1;
+				}
+
+				keepalives.enabled = 1;
+				char * error_char = NULL;
+				keepalives.time = strtol(val[0], &error_char, 10);
+				if (*error_char != '\0') {
+					fprintf(stderr, "TCP keepalive time contains invalid character\n");
+					return 1;
+				}
+
+				keepalives.interval = strtol(val[1], &error_char, 10);
+				if (*error_char != '\0') {
+					fprintf(stderr, "TCP keepalive interval contains invalid character\n");
+					return 1;
+				}
+
+				keepalives.probes = strtol(val[2], &error_char, 10);
+				if (*error_char != '\0') {
+					fprintf(stderr, "TCP keepalive probe count contains invalid character\n");
+					return 1;
+				}
+
+			  break;
+			}
 
 			case 't':   /* -t, --tile-dir */
 				tile_dir = strdup(optarg);
@@ -219,26 +261,27 @@ int main(int argc, char **argv)
 
 			case 'h':   /* -h, --help */
 				fprintf(stderr, "Usage: render_list [OPTION] ...\n");
-				fprintf(stderr, "  -a, --all                         render all tiles in given zoom level range instead of reading from STDIN\n");
-				fprintf(stderr, "  -f, --force                       render tiles even if they seem current\n");
-				fprintf(stderr, "  -k, --keepalives                  enable TCP keepalives\n");
-				fprintf(stderr, "  -l, --max-load=LOAD               sleep if load is this high (defaults to %d)\n", MAX_LOAD_OLD);
-				fprintf(stderr, "  -m, --map=MAP                     render tiles in this map (defaults to '" XMLCONFIG_DEFAULT "')\n");
-				fprintf(stderr, "  -n, --num-threads=N               the number of parallel request threads (default 1)\n");
-				fprintf(stderr, "  -s, --socket=SOCKET|HOSTNAME:PORT unix domain socket name or hostname and port for contacting renderd\n");
-				fprintf(stderr, "  -t, --tile-dir                    tile cache directory (defaults to '" RENDERD_TILE_DIR "')\n");
-				fprintf(stderr, "  -Z, --max-zoom=ZOOM               filter input to only render tiles less than or equal to this zoom level (default is %d)\n", MAX_ZOOM);
-				fprintf(stderr, "  -z, --min-zoom=ZOOM               filter input to only render tiles greater or equal to this zoom level (default is 0)\n");
+				fprintf(stderr, "  -a, --all                                  render all tiles in given zoom level range instead of reading from STDIN\n");
+				fprintf(stderr, "  -f, --force                                render tiles even if they seem current\n");
+				fprintf(stderr, "  -K, --keepalive-config=<t>:<intvl>:<count> TCP keepalive configuration. Send keepalives after t seconds of inactivity, every intvl seconds. Consider connection broken after count probes. Implicitly enables TCP keepalives.\n");
+				fprintf(stderr, "  -k, --keepalives                           enable TCP keepalives\n");
+				fprintf(stderr, "  -l, --max-load=LOAD                        sleep if load is this high (defaults to %d)\n", MAX_LOAD_OLD);
+				fprintf(stderr, "  -m, --map=MAP                              render tiles in this map (defaults to '" XMLCONFIG_DEFAULT "')\n");
+				fprintf(stderr, "  -n, --num-threads=N                        the number of parallel request threads (default 1)\n");
+				fprintf(stderr, "  -s, --socket=SOCKET|HOSTNAME:PORT          unix domain socket name or hostname and port for contacting renderd\n");
+				fprintf(stderr, "  -t, --tile-dir                             tile cache directory (defaults to '" RENDERD_TILE_DIR "')\n");
+				fprintf(stderr, "  -Z, --max-zoom=ZOOM                        filter input to only render tiles less than or equal to this zoom level (default is %d)\n", MAX_ZOOM);
+				fprintf(stderr, "  -z, --min-zoom=ZOOM                        filter input to only render tiles greater or equal to this zoom level (default is 0)\n");
 				fprintf(stderr, "\n");
 				fprintf(stderr, "If you are using --all, you can restrict the tile range by adding these options:\n");
 				fprintf(stderr, "  (please note that tile coordinates must be positive integers and are not latitude and longitude values)\n");
-				fprintf(stderr, "  -X, --max-x=X                     maximum X tile coordinate\n");
-				fprintf(stderr, "  -x, --min-x=X                     minimum X tile coordinate\n");
-				fprintf(stderr, "  -Y, --max-y=Y                     maximum Y tile coordinate\n");
-				fprintf(stderr, "  -y, --min-y=Y                     minimum Y tile coordinate\n");
+				fprintf(stderr, "  -X, --max-x=X                              maximum X tile coordinate\n");
+				fprintf(stderr, "  -x, --min-x=X                              minimum X tile coordinate\n");
+				fprintf(stderr, "  -Y, --max-y=Y                              maximum Y tile coordinate\n");
+				fprintf(stderr, "  -y, --min-y=Y                              minimum Y tile coordinate\n");
 				fprintf(stderr, "\n");
-				fprintf(stderr, "  -h, --help                        display this help and exit\n");
-				fprintf(stderr, "  -V, --version                     display the version number and exit\n");
+				fprintf(stderr, "  -h, --help                                 display this help and exit\n");
+				fprintf(stderr, "  -V, --version                              display the version number and exit\n");
 				fprintf(stderr, "\n");
 				fprintf(stderr, "Without --all, send a list of tiles to be rendered from STDIN in the format:\n");
 				fprintf(stderr, "  X Y Z\n");
