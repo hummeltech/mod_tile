@@ -50,6 +50,11 @@ int main(int argc, char **argv)
 }
 #else
 
+struct keepalive_settings keepalives;
+
+static const int minZoom = 0;
+static const int maxZoom = 18;
+
 #if 1
 static double boundx0 = -0.5;
 static double boundy0 = 51.25;
@@ -150,6 +155,8 @@ int main(int argc, char **argv)
 	int maxZoom = MAX_ZOOM;
 	int minZoom = 0;
 	int numThreads = 1;
+
+	memset(&keepalives, 0, sizeof(struct keepalive_settings));
 
 	while (1) {
 		int option_index = 0;
