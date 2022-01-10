@@ -47,6 +47,16 @@ extern "C" {
 #endif
 #define XMLCONFIG_MAX 41
 
+/* TCP keepalive configuration */
+struct keepalive_settings {
+	int enabled;
+	int time;
+	int interval;
+	int probes;
+};
+
+extern struct keepalive_settings keepalives;
+
 enum protoCmd { cmdIgnore, cmdRender, cmdDirty, cmdDone, cmdNotDone, cmdRenderPrio, cmdRenderBulk, cmdRenderLow };
 
 struct protocol {

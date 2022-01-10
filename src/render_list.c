@@ -53,6 +53,8 @@ int main(int argc, char **argv)
 }
 #else
 
+struct keepalive_settings keepalives;
+
 static int minZoom = 0;
 static int maxZoom = MAX_ZOOM;
 static int verbose = 0;
@@ -118,11 +120,17 @@ int main(int argc, char **argv)
 	struct storage_backend * store;
 	struct stat_info s;
 
+	memset(&keepalives, 0, sizeof(struct keepalive_settings));
+	keepalives.time = 60;
+	keepalives.interval = 60;
+	keepalives.probes = 9;
+
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
 			{"all",         no_argument,       0, 'a'},
 			{"force",       no_argument,       0, 'f'},
+			{"keepalives",  no_argument,       0, 'k'},
 			{"map",         required_argument, 0, 'm'},
 			{"max-load",    required_argument, 0, 'l'},
 			{"max-x",       required_argument, 0, 'X'},
@@ -141,7 +149,7 @@ int main(int argc, char **argv)
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "afm:l:X:Y:Z:x:y:z:n:s:t:vhV", long_options, &option_index);
+		c = getopt_long(argc, argv, "afkm:l:X:Y:Z:x:y:z:n:s:t:vhV", long_options, &option_index);
 
 		if (c == -1) {
 			break;
@@ -155,6 +163,10 @@ int main(int argc, char **argv)
 			case 's':   /* -s, --socket */
 				free(spath);
 				spath = strdup(optarg);
+				break;
+
+			case 'k':		/* -k, --keepalives */
+			  keepalives.enabled = 1;
 				break;
 
 			case 't':   /* -t, --tile-dir */
@@ -209,6 +221,7 @@ int main(int argc, char **argv)
 				fprintf(stderr, "Usage: render_list [OPTION] ...\n");
 				fprintf(stderr, "  -a, --all                         render all tiles in given zoom level range instead of reading from STDIN\n");
 				fprintf(stderr, "  -f, --force                       render tiles even if they seem current\n");
+				fprintf(stderr, "  -k, --keepalives                  enable TCP keepalives\n");
 				fprintf(stderr, "  -l, --max-load=LOAD               sleep if load is this high (defaults to %d)\n", MAX_LOAD_OLD);
 				fprintf(stderr, "  -m, --map=MAP                     render tiles in this map (defaults to '" XMLCONFIG_DEFAULT "')\n");
 				fprintf(stderr, "  -n, --num-threads=N               the number of parallel request threads (default 1)\n");
