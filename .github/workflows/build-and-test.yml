@@ -117,11 +117,14 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/dependencies/install
 
-      - name: Build `mod_tile`
-        uses: ./.github/actions/build
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
 
-      - name: Test `mod_tile`
-        uses: ./.github/actions/test
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
 
       - name: Process & Report `mod_tile` coverage results
         uses: ./.github/actions/coverage
