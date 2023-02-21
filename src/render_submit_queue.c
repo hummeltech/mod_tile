@@ -15,19 +15,28 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
+#ifdef _WIN32
+#include <tchar.h>
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#include <ws2spi.h>
+#else
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#endif
+
 #include <assert.h>
 #include <errno.h>
-#include <netdb.h>
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/un.h>
-#include <unistd.h>
 
 #include "render_submit_queue.h"
 #include "sys_utils.h"

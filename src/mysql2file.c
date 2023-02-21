@@ -15,20 +15,28 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include <stdio.h>
+#ifdef _WIN32
+#include <sys/utime.h>
+#include <tchar.h>
+#include <winsock2.h>
+#include <windows.h>
+#else
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <utime.h>
+#endif
+
+#include <stdio.h>
+#include <stdarg.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <limits.h>
 #include <time.h>
-#include <utime.h>
 
 
 #include <mysql.h>

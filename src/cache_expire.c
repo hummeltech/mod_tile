@@ -15,11 +15,20 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
+#ifdef _WIN32
+#include <tchar.h>
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#include <ws2spi.h>
+#else
 #include <netdb.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+
 #include <stdio.h>
 
 #include "cache_expire.h"

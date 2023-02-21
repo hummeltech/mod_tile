@@ -15,10 +15,17 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
+#ifdef _WIN32
+#include <tchar.h>
+#include <winsock2.h>
+#include <windows.h>
+#else
+#include <string.h>
+#include <sys/socket.h>
+#endif
+
 #include "protocol.h"
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <string.h>
 #include <stdio.h>
 #include <errno.h>
 

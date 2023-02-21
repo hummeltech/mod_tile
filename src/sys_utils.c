@@ -6,6 +6,10 @@
 #include <sys/loadavg.h>
 #endif
 
+#ifndef HAVE_GETLOADAVG
+#include "g_logger.h"
+#endif
+
 double get_load_avg(void)
 {
 #ifdef HAVE_GETLOADAVG

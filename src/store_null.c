@@ -15,9 +15,15 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include "store_null.h"
-#include <unistd.h>
+#ifdef _WIN32
+#include <tchar.h>
+#include <windows.h>
+#else
 #include <stdlib.h>
+#include <unistd.h>
+#endif
+
+#include "store_null.h"
 #include <stdio.h>
 #include <limits.h>
 

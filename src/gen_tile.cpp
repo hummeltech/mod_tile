@@ -25,6 +25,19 @@
 #include <mapnik/load_map.hpp>
 #include <mapnik/image_util.hpp>
 
+#ifdef _WIN32
+#include <tchar.h>
+#include <winsock2.h>
+#include <windows.h>
+#else
+#include <stdlib.h>
+#include <unistd.h>
+#ifdef HTCP_EXPIRE_CACHE
+#include <netdb.h>
+#include <sys/socket.h>
+#endif
+#endif
+
 #include <exception>
 #include <iostream>
 #include <fstream>
@@ -32,10 +45,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <dirent.h>
-#include <unistd.h>
 #include <pthread.h>
 #include <string>
-#include <stdlib.h>
 
 #include "gen_tile.h"
 #include "render_config.h"
@@ -47,11 +58,6 @@
 #include "cache_expire.h"
 #include "parameterize_style.hpp"
 #include "g_logger.h"
-
-#ifdef HTCP_EXPIRE_CACHE
-#include <sys/socket.h>
-#include <netdb.h>
-#endif
 
 #if MAPNIK_VERSION >= 300000
 #define image_data_32 image_rgba8

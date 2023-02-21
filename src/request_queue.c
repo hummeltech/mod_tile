@@ -15,11 +15,17 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include <stdio.h>
+#ifdef _WIN32
+#include <tchar.h>
+#include <windows.h>
+#else
 #include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#include <stdint.h>
 #include <pthread.h>
 
 #include "render_config.h"

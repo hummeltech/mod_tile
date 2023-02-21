@@ -15,15 +15,23 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include <stdio.h>
+#ifdef _WIN32
+#include <tchar.h>
+#include <winsock2.h>
+#include <windows.h>
+#else
+#include <poll.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
+#include <string.h>
 #include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/un.h>
-#include <poll.h>
 #include <errno.h>
 #include <math.h>
 #include <getopt.h>
@@ -31,7 +39,6 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <limits.h>
-#include <string.h>
 
 #include <pthread.h>
 

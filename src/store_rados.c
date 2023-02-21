@@ -23,12 +23,18 @@
  * utilisation of disk space.
  */
 
+#ifdef _WIN32
+#include <tchar.h>
+#include <windows.h>
+#else
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#endif
+
 #include "config.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <limits.h>
-#include <string.h>
 #include <sys/types.h>
 #include <time.h>
 #include <errno.h>

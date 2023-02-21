@@ -21,6 +21,15 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch/catch.hpp"
 
+#ifdef _WIN32
+#include <tchar.h>
+#include <windows.h>
+#else
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#endif
+
 #include "metatile.h"
 #include "config.h"
 #include "gen_tile.h"
@@ -29,14 +38,11 @@
 #include "store.h"
 #include <syslog.h>
 #include <sstream>
-#include "string.h"
 #include <string>
 #include <time.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
-#include <stdlib.h>
 #ifdef __MACH__
 #include <mach/clock.h>
 #include <mach/mach.h>

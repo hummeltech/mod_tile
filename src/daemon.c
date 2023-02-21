@@ -15,22 +15,31 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#ifdef _WIN32
+#include <tchar.h>
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#include <ws2spi.h>
+#else
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <sys/stat.h>
-#include <sys/un.h>
+#include <netinet/in.h>
 #include <poll.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
-#include <string.h>
 #include <strings.h>
 #include <getopt.h>
 
