@@ -44,25 +44,33 @@
 
 module AP_MODULE_DECLARE_DATA tile_module;
 
-#include <stdio.h>
+#ifdef _WIN32
+#include <tchar.h>
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#include <ws2spi.h>
+#else
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <poll.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
 #include <strings.h>
 #include <stdarg.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 #include <sys/time.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <limits.h>
 #include <time.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #include <inttypes.h>
-#include <poll.h>
 
 
 #include "gen_tile.h"
@@ -80,7 +88,7 @@ module AP_MODULE_DECLARE_DATA tile_module;
 
 APLOG_USE_MODULE(tile);
 
-#if (defined(__FreeBSD__) || defined(__MACH__)) && !defined(s6_addr32)
+#if (defined(__FreeBSD__) || defined(__MACH__) || defined(WIN32)) && !defined(s6_addr32)
 #define s6_addr32 __u6_addr.__u6_addr32
 #endif
 

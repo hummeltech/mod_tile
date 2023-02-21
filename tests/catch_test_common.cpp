@@ -20,7 +20,13 @@
 #include <stdio.h>
 #include <string>
 #include <tuple>
-#include <unistd.h>
+
+#ifdef _WIN32
+#include <tchar.h>
+#include <windows.h>
+#else
+#include <string>
+#endif
 
 #include "catch_test_common.hpp"
 #include "pstreams/pstream.hpp"

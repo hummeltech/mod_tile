@@ -39,6 +39,17 @@ if((NOT APR_FOUND) AND (APR_INCLUDE_DIRS) AND (APR_LIBRARIES))
   set(APR_FOUND True)
 endif()
 
+if((NOT APR_VERSION) AND (APR_FOUND))
+  file(STRINGS "${APR_INCLUDE_DIR}/apr_version.h" _contents REGEX "#define APR_[A-Z]+_VERSION[ \t]+")
+  if(_contents)
+    string(REGEX REPLACE ".*#define APR_MAJOR_VERSION[ \t]+([0-9]+).*" "\\1" APR_MAJOR_VERSION "${_contents}")
+    string(REGEX REPLACE ".*#define APR_MINOR_VERSION[ \t]+([0-9]+).*" "\\1" APR_MINOR_VERSION "${_contents}")
+    string(REGEX REPLACE ".*#define APR_PATCH_VERSION[ \t]+([0-9]+).*" "\\1" APR_PATCH_VERSION "${_contents}")
+
+    set(APR_VERSION ${APR_MAJOR_VERSION}.${APR_MINOR_VERSION}.${APR_PATCH_VERSION})
+  endif()
+endif()
+
 include(FindPackageHandleStandardArgs)
 
 if(APR_FOUND)

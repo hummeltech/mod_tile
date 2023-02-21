@@ -30,15 +30,21 @@
 #include "config.h"
 #ifndef HAVE_DAEMON
 
+#ifdef _WIN32
+#include <tchar.h>
+#include <windows.h>
+#else
+#include <stdlib.h>
+#include <unistd.h>
+#endif
+
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #endif
 
 #include <errno.h>
 #include <fcntl.h>
-#include <stdlib.h>
 #include <signal.h>
-#include <unistd.h>
 #ifdef HAVE_PATHS_H
 #include <paths.h>
 #endif

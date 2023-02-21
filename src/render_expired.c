@@ -17,13 +17,23 @@
 
 #include <getopt.h>
 #include <glib.h>
-#include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+
+#ifdef _WIN32
+#include <sys/utime.h>
+#include <tchar.h>
+#include <windows.h>
+#include <winsock2.h>
+#else
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
+#include <utime.h>
+#endif
 
 #include "config.h"
 #include "g_logger.h"

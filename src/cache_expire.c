@@ -17,13 +17,21 @@
 
 #include <arpa/inet.h>
 #include <glib.h>
-#include <netdb.h>
-#include <stdint.h>
 #include <stdio.h>
+
+#ifdef _WIN32
+#include <tchar.h>
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2spi.h>
+#include <ws2tcpip.h>
+#else
+#include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#endif
 
 #include "cache_expire.h"
 #include "g_logger.h"

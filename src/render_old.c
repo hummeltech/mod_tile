@@ -19,13 +19,23 @@
 #include <errno.h>
 #include <getopt.h>
 #include <glib.h>
-#include <limits.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
+
+#ifdef _WIN32
+#include <tchar.h>
+#include <winsock2.h>
+#include <windows.h>
+#else
+#include <poll.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
+#endif
 
 #include "config.h"
 #include "g_logger.h"

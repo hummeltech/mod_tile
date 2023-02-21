@@ -16,9 +16,14 @@
  */
 
 #include <glib.h>
-#include <limits.h>
 #include <stdio.h>
+
+#ifdef _WIN32
+#include <tchar.h>
+#include <windows.h>
+#else
 #include <stdlib.h>
+#endif
 
 #include "g_logger.h"
 #include "store.h"

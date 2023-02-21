@@ -15,11 +15,17 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include <stdio.h>
+#ifdef _WIN32
+#include <tchar.h>
+#include <windows.h>
+#else
 #include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
 #include <string.h>
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>

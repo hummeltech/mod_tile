@@ -18,7 +18,6 @@
 #include <dirent.h>
 #include <exception>
 #include <glib.h>
-#include <limits.h>
 #include <map>
 #include <mapnik/agg_renderer.hpp>
 #include <mapnik/coord.hpp>
@@ -35,15 +34,25 @@
 #include <mapnik/params.hpp>
 #include <mapnik/pixel_types.hpp>
 #include <mapnik/version.hpp>
-#include <math.h>
-#include <memory>
+
+#ifdef _WIN32
+#include <tchar.h>
+#include <winsock2.h>
+#include <windows.h>
+#else
+#include <stdlib.h>
+#include <unistd.h>
+#ifdef HTCP_EXPIRE_CACHE
+#include <netdb.h>
+#include <sys/socket.h>
+#endif
+#endif
+
 #include <pthread.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <string>
 #include <sys/time.h>
-#include <unistd.h>
 #include <utility>
 
 #include "cache_expire.h"

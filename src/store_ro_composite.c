@@ -15,11 +15,17 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
+#ifdef _WIN32
+#include <tchar.h>
+#include <windows.h>
+#else
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#endif
+
 #include "config.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 
 //TODO: need to create an appropriate configure check.
 #ifdef HAVE_CAIRO

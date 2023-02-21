@@ -1,0 +1,97 @@
+name: Microsoft C++ Code Analysis
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: C:/vcpkg_binary_cache
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+    name: Analyze
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "3.29.2"
+
+      - name: Cache vcpkg binary cache directory
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg-binary-cache-windows-latest-${{ github.run_id }}
+          restore-keys: vcpkg-binary-cache-windows-latest
+
+      - name: Prepare vcpkg binary cache directory
+        run: |
+          if [ ! -d ${{ env.VCPKG_DEFAULT_BINARY_CACHE }} ]; then
+            mkdir ${{ env.VCPKG_DEFAULT_BINARY_CACHE }};
+          fi
+        shell: bash
+
+      - name: Download & Install HTTPD
+        run: |
+          curl --location --remote-name --silent https://www.apachelounge.com/download/VS17/binaries/httpd-2.4.59-240404-win64-VS17.zip
+          7z x httpd-2.4.59-240404-win64-VS17.zip
+        shell: bash
+
+      - name: Download & Install APXS
+        run: |
+          curl --location --remote-name --silent https://www.apachelounge.com/download/apxs_win32.zip
+          7z x apxs_win32.zip
+          export PATH=/c/Strawberry/perl/bin:${PATH}
+          perl -I . Configure.pl --with-apache2=${PWD}/Apache24 --with-apache-prog=httpd.exe
+        shell: bash
+
+      - name: Install dependencies
+        run: |
+          vcpkg install \
+            cairo:x64-windows \
+            curl:x64-windows \
+            glib:x64-windows \
+            icu:x64-windows \
+            iniparser:x64-windows \
+            mapnik:x64-windows \
+            pkgconf:x64-windows
+        shell: bash
+
+      - name: Create build directory
+        run: mkdir build
+        shell: bash
+
+      - name: Configure CMake
+        run: |
+          export PATH=/c/Strawberry/perl/bin:${PWD}/Apache24/bin:${PATH}
+          curl --location --silent https://raw.githubusercontent.com/asankah/syslog-win32/master/syslog.h > includes/syslog.h
+          curl --location --silent https://raw.githubusercontent.com/win32ports/strings_h/master/strings.h > includes/strings.h
+          mkdir includes/sys
+          curl --location --silent https://raw.githubusercontent.com/win32ports/sys_time_h/master/sys/time.h > includes/sys/time.h
+          cmake -B build -S . \
+            -LA \
+            -DAPR_INCLUDE_DIR:PATH=${PWD}/Apache24/include \
+            -DAPR_LIBRARY:PATH=${PWD}/Apache24/lib/apr-1.lib \
+            -DAPXS_EXECUTABLE:PATH=${PWD}/Apache24/bin/apxs.bat \
+            -DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE:-Release} \
+            -DCMAKE_TOOLCHAIN_FILE:PATH=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
+            -DENABLE_TESTS:BOOL=OFF \
+            -DHTTPD_EXECUTABLE:PATH=${PWD}/Apache24/bin/httpd.exe \
+            -DHTTPD_INCLUDE_DIR:PATH=${PWD}/Apache24/include \
+            -DLIBMAPNIK_LIBRARY:PATH=C:/vcpkg/installed/x64-windows/lib/libmapnik.lib \
+            -DNOGROUP_NAME:STRING=nobody \
+            -DVCPKG_TARGET_TRIPLET:STRING=x64-windows
+        shell: bash
+
+      - name: Build CMake
+        run: |
+          cmake --build build
+        shell: bash
