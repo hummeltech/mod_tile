@@ -1524,6 +1524,7 @@ static int tile_handler_serve(request_rec *r)
 	tile_config_rec *tile_configs;
 	struct tile_request_data *rdata;
 	struct protocol *cmd;
+	char *surrogate_key;
 
 	tile_server_conf *scfg = (tile_server_conf *)ap_get_module_config(r->server->module_config, &tile_module);
 
@@ -1576,6 +1577,12 @@ static int tile_handler_serve(request_rec *r)
 	len = rdata->store->tile_read(rdata->store, cmd->xmlname, cmd->options, cmd->x, cmd->y, cmd->z, buf, tile_max, &compressed, err_msg);
 	ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
 		      "Read tile of length %i from %s: %s", len, rdata->store->tile_storage_id(rdata->store, cmd->xmlname, cmd->options, cmd->x, cmd->y, cmd->z, id), err_msg);
+
+	surrogate_key = strstr(id, cmd->xmlname);
+
+	if (surrogate_key != NULL) {
+		apr_table_setn(r->headers_out, "Surrogate-Key", apr_psprintf(r->pool, "/%s", surrogate_key));
+	}
 
 	if (len > 0) {
 		if (compressed) {

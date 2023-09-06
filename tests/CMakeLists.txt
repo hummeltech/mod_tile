@@ -82,6 +82,8 @@ set(TESTS_TILES_DIR "${PROJECT_BINARY_DIR}/tests/tiles")
 
 file(COPY tiles.sha256sum DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
+set(META_TILE_PATH_FILE "9/0/0/16/43/136.meta")
+set(META_TILE_PATH_MEMCACHED "297/191/9.meta")
 set(TILE_ZXY "9/297/191")
 
 set(WWW_USER_NAME "nobody")
@@ -652,8 +654,6 @@ foreach(STORAGE_BACKEND_INDEX RANGE ${STORAGE_BACKENDS_LENGTH})
     set(DIRTY_ON_URL "${HTTPD0_URL}/dirty")
     set(STATUS_OFF_URL "${HTTPD1_URL}/status")
     set(STATUS_ON_URL "${HTTPD0_URL}/status")
-    # Increment count for stats (only counted by requests to HTTPD0_URL, HTTPD1_URL has stats disabled)
-    math(EXPR STATS_COUNTER "${STATS_COUNTER} + 1")
 
     add_good_tile_download_test(
       ${MAP_NAME}_${STORAGE_BACKEND}_0
@@ -669,6 +669,9 @@ foreach(STORAGE_BACKEND_INDEX RANGE ${STORAGE_BACKENDS_LENGTH})
       tiles_downloaded_${STORAGE_BACKEND}
       services_started_${STORAGE_BACKEND}
     )
+
+    # Increment count for stats (only counted by requests to HTTPD0_URL, HTTPD1_URL has stats disabled)
+    math(EXPR STATS_COUNTER "${STATS_COUNTER} + 1")
 
     add_test(NAME dirty_and_status_${MAP_NAME}_${STORAGE_BACKEND}
       COMMAND ${BASH} -c "
@@ -716,6 +719,61 @@ foreach(STORAGE_BACKEND_INDEX RANGE ${STORAGE_BACKENDS_LENGTH})
       FIXTURES_REQUIRED "services_started_${STORAGE_BACKEND};tiles_downloaded_${STORAGE_BACKEND}"
       TIMEOUT 20
     )
+    add_test(NAME tile_expired_${MAP_NAME}_${STORAGE_BACKEND}
+      COMMAND ${BASH} -c "
+        ${TOUCH_EXECUTABLE} -d '-1 month' ${TEST_TILES_DIR}/planet-import-complete
+        if ! ${CURL_CMD} --output /dev/null ${HTTPD1_URL}; then
+          echo \"Past import: ${HTTPD1_URL}\";
+        fi
+        if ! ${CURL_CMD} --output /dev/null ${HTTPD2_URL}; then
+          echo \"Past import: ${HTTPD2_URL}\";
+        fi
+        ${TOUCH_EXECUTABLE} -d '+1 month' ${TEST_TILES_DIR}/planet-import-complete
+        if ! ${CURL_CMD} --output /dev/null ${HTTPD1_URL}; then
+          echo \"Future import: ${HTTPD1_URL}\";
+        fi
+        if ! ${CURL_CMD} --output /dev/null ${HTTPD2_URL}; then
+          echo \"Future import: ${HTTPD2_URL}\";
+        fi
+      "
+      WORKING_DIRECTORY tests
+    )
+    set_tests_properties(tile_expired_${MAP_NAME}_${STORAGE_BACKEND} PROPERTIES
+      FIXTURES_REQUIRED services_started_${STORAGE_BACKEND}
+    )
+    if(STORAGE_BACKEND STREQUAL file)
+      set(META_TILE_PATH "/${MAP_NAME}/${META_TILE_PATH_FILE}")
+    elseif(STORAGE_BACKEND STREQUAL memcached_custom)
+      set(META_TILE_PATH "/${MAP_NAME}/${META_TILE_PATH_MEMCACHED}")
+    elseif(STORAGE_BACKEND STREQUAL memcached_default)
+      set(META_TILE_PATH "/${MAP_NAME}/${META_TILE_PATH_MEMCACHED}")
+    endif()
+    add_test(
+      NAME check_surrogate_key_header_${MAP_NAME}_${STORAGE_BACKEND}
+      COMMAND ${BASH} -c "
+        echo 'Searching for \"Surrogate-Key: ${META_TILE_PATH}\"'
+        CURL_HEAD_OUTPUT=$(${CURL_CMD} --head ${HTTPD0_URL})
+        if ! \$(echo \"\${CURL_HEAD_OUTPUT}\" | ${GREP_EXECUTABLE} -q 'Surrogate-Key: ${META_TILE_PATH}'); then
+          echo \"\${CURL_HEAD_OUTPUT}\";
+          exit 1;
+        fi
+        CURL_HEAD_OUTPUT=$(${CURL_CMD} --head ${HTTPD1_URL})
+        if ! \$(echo \"\${CURL_HEAD_OUTPUT}\" | ${GREP_EXECUTABLE} -q 'Surrogate-Key: ${META_TILE_PATH}'); then
+          echo \"\${CURL_HEAD_OUTPUT}\";
+          exit 1;
+        fi
+      "
+    )
+    set_tests_properties(check_surrogate_key_header_${MAP_NAME}_${STORAGE_BACKEND} PROPERTIES
+      DEPENDS "download_tile_${MAP_NAME}_${STORAGE_BACKEND}_0;download_tile_${MAP_NAME}_${STORAGE_BACKEND}_1"
+      FIXTURES_REQUIRED services_started_${STORAGE_BACKEND}
+      FIXTURES_SETUP tiles_downloaded_${STORAGE_BACKEND}
+      TIMEOUT 20
+    )
+
+    # Increment count for stats (only counted by requests to HTTPD0_URL, HTTPD1_URL has stats disabled)
+    math(EXPR STATS_COUNTER "${STATS_COUNTER} + 1")
+
     add_test(NAME stats_urls_${MAP_NAME}_${STORAGE_BACKEND}
       COMMAND ${BASH} -c "
         METRICS_ON_CMD=\"${CURL_CMD} ${METRICS_ON_URL}\"
@@ -750,28 +808,6 @@ foreach(STORAGE_BACKEND_INDEX RANGE ${STORAGE_BACKENDS_LENGTH})
     )
     set_tests_properties(stats_urls_${MAP_NAME}_${STORAGE_BACKEND} PROPERTIES
       FIXTURES_REQUIRED "services_started_${STORAGE_BACKEND};tiles_downloaded_${STORAGE_BACKEND}"
-    )
-    add_test(NAME tile_expired_${MAP_NAME}_${STORAGE_BACKEND}
-      COMMAND ${BASH} -c "
-        ${TOUCH_EXECUTABLE} -d '-1 month' ${TEST_TILES_DIR}/planet-import-complete
-        if ! ${CURL_CMD} --output /dev/null ${HTTPD1_URL}; then
-          echo \"Past import: ${HTTPD1_URL}\";
-        fi
-        if ! ${CURL_CMD} --output /dev/null ${HTTPD2_URL}; then
-          echo \"Past import: ${HTTPD2_URL}\";
-        fi
-        ${TOUCH_EXECUTABLE} -d '+1 month' ${TEST_TILES_DIR}/planet-import-complete
-        if ! ${CURL_CMD} --output /dev/null ${HTTPD1_URL}; then
-          echo \"Future import: ${HTTPD1_URL}\";
-        fi
-        if ! ${CURL_CMD} --output /dev/null ${HTTPD2_URL}; then
-          echo \"Future import: ${HTTPD2_URL}\";
-        fi
-      "
-      WORKING_DIRECTORY tests
-    )
-    set_tests_properties(tile_expired_${MAP_NAME}_${STORAGE_BACKEND} PROPERTIES
-      FIXTURES_REQUIRED services_started_${STORAGE_BACKEND}
     )
   endforeach()
 
