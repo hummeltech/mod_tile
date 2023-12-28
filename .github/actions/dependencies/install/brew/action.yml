@@ -7,6 +7,10 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Update package information
+      run: brew update
+      shell: bash --noprofile --norc -euxo pipefail {0}
+
     - name: Install package(s)
       run: brew install ${{ inputs.packages }} || true
       shell: bash --noprofile --norc -euxo pipefail {0}
