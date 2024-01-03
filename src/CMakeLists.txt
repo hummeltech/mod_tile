@@ -50,6 +50,12 @@ set(STORE_LIBRARIES
   ${LIBRADOS_LIBRARIES}
 )
 
+add_library(common_o OBJECT ${COMMON_SRCS})
+add_library(protocol_helper_o OBJECT protocol_helper.c)
+add_library(render_submit_queue_o OBJECT render_submit_queue.c)
+add_library(renderd_config_o OBJECT renderd_config.c)
+add_library(store_o OBJECT ${STORE_SRCS})
+
 #-----------------------------------------------------------------------------
 #
 #  Installed targets
@@ -83,12 +89,12 @@ set_target_properties(mod_tile PROPERTIES PREFIX "" SUFFIX ".so")
 #-----------------------------------------------------------------------------
 
 set(render_expired_SRCS
-  ${COMMON_SRCS}
-  ${STORE_SRCS}
-  protocol_helper.c
+  $<TARGET_OBJECTS:common_o>
+  $<TARGET_OBJECTS:protocol_helper_o>
+  $<TARGET_OBJECTS:render_submit_queue_o>
+  $<TARGET_OBJECTS:renderd_config_o>
+  $<TARGET_OBJECTS:store_o>
   render_expired.c
-  render_submit_queue.c
-  renderd_config.c
 )
 set(render_expired_LIBS
   ${COMMON_LIBRARIES}
@@ -105,12 +111,12 @@ target_link_libraries(render_expired ${render_expired_LIBS})
 #-----------------------------------------------------------------------------
 
 set(render_list_SRCS
-  ${COMMON_SRCS}
-  ${STORE_SRCS}
-  protocol_helper.c
+  $<TARGET_OBJECTS:common_o>
+  $<TARGET_OBJECTS:protocol_helper_o>
+  $<TARGET_OBJECTS:render_submit_queue_o>
+  $<TARGET_OBJECTS:renderd_config_o>
+  $<TARGET_OBJECTS:store_o>
   render_list.c
-  render_submit_queue.c
-  renderd_config.c
 )
 set(render_list_LIBS
   ${COMMON_LIBRARIES}
@@ -127,11 +133,11 @@ target_link_libraries(render_list ${render_list_LIBS})
 #-----------------------------------------------------------------------------
 
 set(render_old_SRCS
-  ${COMMON_SRCS}
-  protocol_helper.c
+  $<TARGET_OBJECTS:common_o>
+  $<TARGET_OBJECTS:protocol_helper_o>
+  $<TARGET_OBJECTS:render_submit_queue_o>
+  $<TARGET_OBJECTS:renderd_config_o>
   render_old.c
-  render_submit_queue.c
-  renderd_config.c
   store_file_utils.c
 )
 set(render_old_LIBS
@@ -148,11 +154,11 @@ target_link_libraries(render_old ${render_old_LIBS})
 #-----------------------------------------------------------------------------
 
 set(render_speedtest_SRCS
-  ${COMMON_SRCS}
-  protocol_helper.c
+  $<TARGET_OBJECTS:common_o>
+  $<TARGET_OBJECTS:protocol_helper_o>
+  $<TARGET_OBJECTS:render_submit_queue_o>
+  $<TARGET_OBJECTS:renderd_config_o>
   render_speedtest.cpp
-  render_submit_queue.c
-  renderd_config.c
 )
 set(render_speedtest_LIBS
   ${COMMON_LIBRARIES}
@@ -167,18 +173,22 @@ target_link_libraries(render_speedtest ${render_speedtest_LIBS})
 #
 #-----------------------------------------------------------------------------
 
-set(renderd_SRCS
-  ${COMMON_SRCS}
-  ${STORE_SRCS}
+add_library(renderd_o OBJECT
   cache_expire.c
   daemon_compat.c
   gen_tile.cpp
   metatile.cpp
   parameterize_style.cpp
-  protocol_helper.c
-  renderd.c
-  renderd_config.c
   request_queue.c
+)
+
+set(renderd_SRCS
+  $<TARGET_OBJECTS:common_o>
+  $<TARGET_OBJECTS:protocol_helper_o>
+  $<TARGET_OBJECTS:store_o>
+  $<TARGET_OBJECTS:renderd_o>
+  $<TARGET_OBJECTS:renderd_config_o>
+  renderd.c
 )
 set(renderd_LIBS
   ${COMMON_LIBRARIES}
