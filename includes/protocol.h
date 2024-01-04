@@ -55,7 +55,7 @@ enum protoCmd { cmdIgnore,
 		cmdRenderPrio,
 		cmdRenderBulk,
 		cmdRenderLow
-	      };
+};
 
 struct protocol {
 	int ver;

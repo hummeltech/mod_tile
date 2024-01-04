@@ -16,25 +16,24 @@
  */
 
 #include "config.h"
+#include <limits.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
 #include <string.h>
 #include <sys/types.h>
-#include <pthread.h>
+#include <unistd.h>
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
 #include <curl/easy.h>
 #endif
 
+#include "g_logger.h"
+#include "protocol.h"
+#include "render_config.h"
 #include "store.h"
 #include "store_ro_http_proxy.h"
-#include "render_config.h"
-#include "protocol.h"
-#include "g_logger.h"
-
 
 #ifdef HAVE_LIBCURL
 
@@ -43,14 +42,14 @@ static int done_global_init = 0;
 
 struct tile_cache {
 	struct stat_info st_stat;
-	char * tile;
+	char *tile;
 	int x, y, z;
 	char xmlname[XMLCONFIG_MAX];
 };
 
 struct ro_http_proxy_ctx {
-	CURL * ctx;
-	char * baseurl;
+	CURL *ctx;
+	char *baseurl;
 	struct tile_cache cache;
 };
 
@@ -59,11 +58,10 @@ struct MemoryStruct {
 	size_t size;
 };
 
-
 static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, void *userp)
 {
 	size_t realsize = size * nmemb;
-	struct MemoryStruct * chunk = userp;
+	struct MemoryStruct *chunk = userp;
 
 	if (chunk->memory) {
 		chunk->memory = realloc(chunk->memory, chunk->size + realsize);
@@ -79,21 +77,21 @@ static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, v
 	return realsize;
 }
 
-static char * ro_http_proxy_xyz_to_storagekey(struct storage_backend * store, int x, int y, int z, char * key)
+static char *ro_http_proxy_xyz_to_storagekey(struct storage_backend *store, int x, int y, int z, char *key)
 {
 	snprintf(key, PATH_MAX - 1, "http://%s/%i/%i/%i.png", ((struct ro_http_proxy_ctx *)(store->storage_ctx))->baseurl, z, x, y);
 	return key;
 }
 
-static int ro_http_proxy_tile_retrieve(struct storage_backend * store, const char *xmlconfig, const char *options, int x, int y, int z)
+static int ro_http_proxy_tile_retrieve(struct storage_backend *store, const char *xmlconfig, const char *options, int x, int y, int z)
 {
-	struct ro_http_proxy_ctx * ctx = (struct ro_http_proxy_ctx *)(store->storage_ctx);
-	char * path;
+	struct ro_http_proxy_ctx *ctx = (struct ro_http_proxy_ctx *)(store->storage_ctx);
+	char *path;
 	CURLcode res;
 	struct MemoryStruct chunk;
 	long httpCode;
 
-	//TODO: Deal with options
+	// TODO: Deal with options
 	if ((ctx->cache.x == x) && (ctx->cache.y == y) && (ctx->cache.z == z) && (strcmp(ctx->cache.xmlname, xmlconfig) == 0)) {
 		g_logger(G_LOG_LEVEL_DEBUG, "ro_http_proxy_tile_fetch: Got a cached tile");
 		return 1;
@@ -133,31 +131,30 @@ static int ro_http_proxy_tile_retrieve(struct storage_backend * store, const cha
 		}
 
 		switch (httpCode) {
-			case 200: {
-				if (ctx->cache.tile != NULL) {
-					free(ctx->cache.tile);
-				}
-
-				ctx->cache.tile = chunk.memory;
-				ctx->cache.st_stat.size = chunk.size;
-				ctx->cache.st_stat.expired = 0;
-				res = curl_easy_getinfo(ctx->ctx, CURLINFO_FILETIME, &(ctx->cache.st_stat.mtime));
-				ctx->cache.st_stat.atime = 0;
-				g_logger(G_LOG_LEVEL_DEBUG, "ro_http_proxy_tile_read: Read file of size %lu", chunk.size);
-				break;
+		case 200: {
+			if (ctx->cache.tile != NULL) {
+				free(ctx->cache.tile);
 			}
 
-			case 404: {
-				if (ctx->cache.tile != NULL) {
-					free(ctx->cache.tile);
-				}
-
-				ctx->cache.st_stat.size = -1;
-				ctx->cache.st_stat.expired = 0;
-				break;
-			}
+			ctx->cache.tile = chunk.memory;
+			ctx->cache.st_stat.size = chunk.size;
+			ctx->cache.st_stat.expired = 0;
+			res = curl_easy_getinfo(ctx->ctx, CURLINFO_FILETIME, &(ctx->cache.st_stat.mtime));
+			ctx->cache.st_stat.atime = 0;
+			g_logger(G_LOG_LEVEL_DEBUG, "ro_http_proxy_tile_read: Read file of size %lu", chunk.size);
+			break;
 		}
 
+		case 404: {
+			if (ctx->cache.tile != NULL) {
+				free(ctx->cache.tile);
+			}
+
+			ctx->cache.st_stat.size = -1;
+			ctx->cache.st_stat.expired = 0;
+			break;
+		}
+		}
 
 		ctx->cache.x = x;
 		ctx->cache.y = y;
@@ -167,9 +164,9 @@ static int ro_http_proxy_tile_retrieve(struct storage_backend * store, const cha
 	}
 }
 
-static int ro_http_proxy_tile_read(struct storage_backend * store, const char *xmlconfig, const char *options, int x, int y, int z, char *buf, size_t sz, int * compressed, char * log_msg)
+static int ro_http_proxy_tile_read(struct storage_backend *store, const char *xmlconfig, const char *options, int x, int y, int z, char *buf, size_t sz, int *compressed, char *log_msg)
 {
-	struct ro_http_proxy_ctx * ctx = (struct ro_http_proxy_ctx *)(store->storage_ctx);
+	struct ro_http_proxy_ctx *ctx = (struct ro_http_proxy_ctx *)(store->storage_ctx);
 
 	if (ro_http_proxy_tile_retrieve(store, xmlconfig, options, x, y, z) > 0) {
 		if (ctx->cache.st_stat.size > sz) {
@@ -185,10 +182,10 @@ static int ro_http_proxy_tile_read(struct storage_backend * store, const char *x
 	}
 }
 
-static struct stat_info ro_http_proxy_tile_stat(struct storage_backend * store, const char *xmlconfig, const char *options, int x, int y, int z)
+static struct stat_info ro_http_proxy_tile_stat(struct storage_backend *store, const char *xmlconfig, const char *options, int x, int y, int z)
 {
 	struct stat_info tile_stat;
-	struct ro_http_proxy_ctx * ctx = (struct ro_http_proxy_ctx *)(store->storage_ctx);
+	struct ro_http_proxy_ctx *ctx = (struct ro_http_proxy_ctx *)(store->storage_ctx);
 
 	if (ro_http_proxy_tile_retrieve(store, xmlconfig, options, x, y, z) > 0) {
 		return ctx->cache.st_stat;
@@ -202,37 +199,34 @@ static struct stat_info ro_http_proxy_tile_stat(struct storage_backend * store, 
 	}
 }
 
-
-static char * ro_http_proxy_tile_storage_id(struct storage_backend * store, const char *xmlconfig, const char *options, int x, int y, int z, char * string)
+static char *ro_http_proxy_tile_storage_id(struct storage_backend *store, const char *xmlconfig, const char *options, int x, int y, int z, char *string)
 {
 
 	return ro_http_proxy_xyz_to_storagekey(store, x, y, z, string);
 }
 
-static int ro_http_proxy_metatile_write(struct storage_backend * store, const char *xmlconfig, const char *options, int x, int y, int z, const char *buf, int sz)
+static int ro_http_proxy_metatile_write(struct storage_backend *store, const char *xmlconfig, const char *options, int x, int y, int z, const char *buf, int sz)
 {
 	g_logger(G_LOG_LEVEL_ERROR, "ro_http_proxy_metatile_write: This is a readonly storage backend. Write functionality isn't implemented");
 	return -1;
 }
 
-
-static int ro_http_proxy_metatile_delete(struct storage_backend * store, const char *xmlconfig, int x, int y, int z)
+static int ro_http_proxy_metatile_delete(struct storage_backend *store, const char *xmlconfig, int x, int y, int z)
 {
 	g_logger(G_LOG_LEVEL_ERROR, "ro_http_proxy_metatile_delete: This is a readonly storage backend. Write functionality isn't implemented");
 	return -1;
 }
 
-static int ro_http_proxy_metatile_expire(struct storage_backend * store, const char *xmlconfig, int x, int y, int z)
+static int ro_http_proxy_metatile_expire(struct storage_backend *store, const char *xmlconfig, int x, int y, int z)
 {
 
 	g_logger(G_LOG_LEVEL_ERROR, "ro_http_proxy_metatile_expire: This is a readonly storage backend. Write functionality isn't implemented");
 	return -1;
 }
 
-
-static int ro_http_proxy_close_storage(struct storage_backend * store)
+static int ro_http_proxy_close_storage(struct storage_backend *store)
 {
-	struct ro_http_proxy_ctx * ctx = (struct ro_http_proxy_ctx *)(store->storage_ctx);
+	struct ro_http_proxy_ctx *ctx = (struct ro_http_proxy_ctx *)(store->storage_ctx);
 
 	free(ctx->baseurl);
 
@@ -247,20 +241,17 @@ static int ro_http_proxy_close_storage(struct storage_backend * store)
 	return 0;
 }
 
+#endif // Have curl
 
-#endif //Have curl
-
-
-
-struct storage_backend * init_storage_ro_http_proxy(const char * connection_string)
+struct storage_backend *init_storage_ro_http_proxy(const char *connection_string)
 {
 
 #ifndef HAVE_LIBCURL
 	g_logger(G_LOG_LEVEL_ERROR, "init_storage_ro_http_proxy: Support for curl and therefore the http proxy storage has not been compiled into this program");
 	return NULL;
 #else
-	struct storage_backend * store = malloc(sizeof(struct storage_backend));
-	struct ro_http_proxy_ctx * ctx = malloc(sizeof(struct ro_http_proxy_ctx));
+	struct storage_backend *store = malloc(sizeof(struct storage_backend));
+	struct ro_http_proxy_ctx *ctx = malloc(sizeof(struct ro_http_proxy_ctx));
 	CURLcode res;
 
 	g_logger(G_LOG_LEVEL_DEBUG, "init_storage_ro_http_proxy: initialising proxy storage backend for %s", connection_string);

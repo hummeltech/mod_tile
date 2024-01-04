@@ -15,20 +15,20 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
 
+#include "g_logger.h"
 #include "protocol.h"
 #include "render_config.h"
 #include "store_file.h"
 #include "store_file_utils.h"
-#include "g_logger.h"
 
 // Build parent directories for the specified file name
 // Note: the part following the trailing / is ignored
@@ -89,8 +89,6 @@ int mkdirp(const char *path)
 
 	return 0;
 }
-
-
 
 /* File path hashing. Used by both mod_tile and render daemon
  * The two must both agree on the file layout for meta-tiling
@@ -230,7 +228,7 @@ void xyz_to_path(char *path, size_t len, const char *tile_dir, const char *xmlco
 	}
 
 	snprintf(path, len, "%s/%s/%d/%u/%u/%u/%u/%u.png", tile_dir, xmlconfig, z, hash[4], hash[3], hash[2], hash[1], hash[0]);
-#else // DIRECTORY_HASH
+#else  // DIRECTORY_HASH
 	snprintf(path, len, TILE_PATH "/%s/%d/%d/%d.png", xmlconfig, z, x, y);
 #endif // DIRECTORY_HASH
 	return;

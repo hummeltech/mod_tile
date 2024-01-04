@@ -1,28 +1,27 @@
 /* wrapper for storage engines
  */
 
+#include <errno.h>
+#include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
 #include <string.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
 
-
+#include "g_logger.h"
 #include "store.h"
 #include "store_file.h"
 #include "store_memcached.h"
-#include "store_rados.h"
-#include "store_ro_http_proxy.h"
-#include "store_ro_composite.h"
 #include "store_null.h"
-#include "g_logger.h"
+#include "store_rados.h"
+#include "store_ro_composite.h"
+#include "store_ro_http_proxy.h"
 
 /**
  * In Apache 2.2, we call the init_storage_backend once per process. For mpm_worker and mpm_event multiple threads therefore use the same
@@ -30,12 +29,12 @@
  *
  * In Apache 2.4, we call the init_storage_backend once per thread, and therefore each thread has its own storage context to work with.
  */
-struct storage_backend * init_storage_backend(const char * options)
+struct storage_backend *init_storage_backend(const char *options)
 {
 	struct stat st;
-	struct storage_backend * store = NULL;
+	struct storage_backend *store = NULL;
 
-	//Determine the correct storage backend based on the options string
+	// Determine the correct storage backend based on the options string
 	if (strlen(options) == 0) {
 		g_logger(G_LOG_LEVEL_ERROR, "init_storage_backend: Options string was empty");
 		return NULL;

@@ -31,7 +31,7 @@ enum queueEnum { queueRequest,
 		 queueRender,
 		 queueDuplicate,
 		 queueRequestLow
-	       };
+};
 
 struct item {
 	struct item *next;

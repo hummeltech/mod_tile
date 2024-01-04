@@ -152,6 +152,6 @@ enum tileState { tileMissing,
 		 tileOld,
 		 tileVeryOld,
 		 tileCurrent
-	       };
+};
 
 #endif

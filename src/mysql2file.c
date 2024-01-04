@@ -15,33 +15,31 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/un.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <limits.h>
 #include <time.h>
+#include <unistd.h>
 #include <utime.h>
 
-
+#include <assert.h>
 #include <mysql.h>
 #include <mysqld_error.h>
 #include <signal.h>
-#include <stdarg.h>
 #include <sslopt-vars.h>
-#include <assert.h>
+#include <stdarg.h>
 
 #define WWW_ROOT "/var/www/html"
 // TILE_PATH must have tile z directory z(0..18)/x/y.png
 #define TILE_PATH "/osm_tiles2"
-
 
 // Build parent directories for the specified file name
 // Note: the part following the trailing / is ignored
@@ -146,7 +144,7 @@ int main(int argc, char **argv)
 
 		assert(mysql_num_fields(res) == 5);
 
-		//printf("x(%s) y(%s) z(%s) data_length(%lu): %s\n", row[0], row[1], row[2], lengths[3], row[4]);
+		// printf("x(%s) y(%s) z(%s) data_length(%lu): %s\n", row[0], row[1], row[2], lengths[3], row[4]);
 
 		x = strtoul(row[0], NULL, 10);
 		y = strtoul(row[1], NULL, 10);
@@ -156,7 +154,7 @@ int main(int argc, char **argv)
 		parseDate(&date, row[4]);
 		created_at = mktime(&date);
 
-		//printf("x(%lu) y(%lu) z(%lu) data_length(%lu): %s", x,y,z,length,ctime(&created_at));
+		// printf("x(%lu) y(%lu) z(%lu) data_length(%lu): %s", x,y,z,length,ctime(&created_at));
 
 		if (!length) {
 			printf("skipping empty tile x(%lu) y(%lu) z(%lu) data_length(%lu): %s", x, y, z, length, ctime(&created_at));
@@ -180,7 +178,7 @@ int main(int argc, char **argv)
 		}
 
 		close(fd);
-		utb.actime  = created_at;
+		utb.actime = created_at;
 		utb.modtime = created_at;
 
 		if (utime(path, &utb) < 0) {
@@ -189,9 +187,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	printf("Number of rows: %lu\n", (unsigned long) mysql_num_rows(res));
+	printf("Number of rows: %lu\n", (unsigned long)mysql_num_rows(res));
 	mysql_free_result(res);
 
-	mysql_close(&mysql);	/* Close & free connection */
+	mysql_close(&mysql); /* Close & free connection */
 	return 0;
 }

@@ -15,16 +15,16 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
+#include <pthread.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
 #include <string.h>
-#include <pthread.h>
+#include <unistd.h>
 
+#include "g_logger.h"
 #include "render_config.h"
 #include "request_queue.h"
-#include "g_logger.h"
 
 static int calcHashKey(struct request_queue *queue, struct item *item)
 {
@@ -39,10 +39,10 @@ static int calcHashKey(struct request_queue *queue, struct item *item)
 	return key % queue->hashidxSize;
 }
 
-static struct item * lookup_item_idx(struct request_queue * queue, struct item * item)
+static struct item *lookup_item_idx(struct request_queue *queue, struct item *item)
 {
-	struct item_idx * nextItem;
-	struct item * test;
+	struct item_idx *nextItem;
+	struct item *test;
 
 	int key = calcHashKey(queue, item);
 
@@ -54,9 +54,7 @@ static struct item * lookup_item_idx(struct request_queue * queue, struct item *
 		while (nextItem != NULL) {
 			test = nextItem->item;
 
-			if ((item->mx == test->mx) && (item->my == test->my)
-					&& (item->req.z == test->req.z) && (!strcmp(
-								item->req.xmlname, test->req.xmlname))) {
+			if ((item->mx == test->mx) && (item->my == test->my) && (item->req.z == test->req.z) && (!strcmp(item->req.xmlname, test->req.xmlname))) {
 				return test;
 			} else {
 				nextItem = nextItem->next;
@@ -67,10 +65,10 @@ static struct item * lookup_item_idx(struct request_queue * queue, struct item *
 	return NULL;
 }
 
-static void insert_item_idx(struct request_queue * queue, struct item *item)
+static void insert_item_idx(struct request_queue *queue, struct item *item)
 {
-	struct item_idx * nextItem;
-	struct item_idx * prevItem;
+	struct item_idx *nextItem;
+	struct item_idx *prevItem;
 
 	int key = calcHashKey(queue, item);
 
@@ -92,15 +90,15 @@ static void insert_item_idx(struct request_queue * queue, struct item *item)
 	}
 }
 
-static void remove_item_idx(struct request_queue * queue, struct item * item)
+static void remove_item_idx(struct request_queue *queue, struct item *item)
 {
 	int key = calcHashKey(queue, item);
-	struct item_idx * nextItem;
-	struct item_idx * prevItem;
-	struct item * test;
+	struct item_idx *nextItem;
+	struct item_idx *prevItem;
+	struct item *test;
 
 	if (queue->item_hashidx[key].item == NULL) {
-		//item not in index;
+		// item not in index;
 		return;
 	}
 
@@ -110,9 +108,7 @@ static void remove_item_idx(struct request_queue * queue, struct item * item)
 	while (nextItem != NULL) {
 		test = nextItem->item;
 
-		if ((item->mx == test->mx) && (item->my == test->my) && (item->req.z
-				== test->req.z) && (!strcmp(item->req.xmlname,
-						    test->req.xmlname))) {
+		if ((item->mx == test->mx) && (item->my == test->my) && (item->req.z == test->req.z) && (!strcmp(item->req.xmlname, test->req.xmlname))) {
 			/*
 			 * Found item, removing it from list
 			 */
@@ -143,7 +139,7 @@ static void remove_item_idx(struct request_queue * queue, struct item * item)
 	}
 }
 
-static enum protoCmd pending(struct request_queue * queue, struct item *test)
+static enum protoCmd pending(struct request_queue *queue, struct item *test)
 {
 	// check all queues and render list to see if this request already queued
 	// If so, add this new request as a duplicate
@@ -166,7 +162,7 @@ static enum protoCmd pending(struct request_queue * queue, struct item *test)
 	return cmdRender;
 }
 
-struct item *request_queue_fetch_request(struct request_queue * queue)
+struct item *request_queue_fetch_request(struct request_queue *queue)
 {
 	struct item *item = NULL;
 
@@ -202,7 +198,7 @@ struct item *request_queue_fetch_request(struct request_queue * queue)
 		item->next->prev = item->prev;
 		item->prev->next = item->next;
 
-		//Add item to render queue
+		// Add item to render queue
 		item->prev = &(queue->renderHead);
 		item->next = queue->renderHead.next;
 		queue->renderHead.next->prev = item;
@@ -218,7 +214,7 @@ struct item *request_queue_fetch_request(struct request_queue * queue)
 /* If a fd becomes invalid for returning request information, remove it from all
  * requests to not send feedback to invalid FDs
  */
-void request_queue_clear_requests_by_fd(struct request_queue * queue, int fd)
+void request_queue_clear_requests_by_fd(struct request_queue *queue, int fd)
 {
 	struct item *item, *dupes, *queueHead;
 
@@ -230,25 +226,25 @@ void request_queue_clear_requests_by_fd(struct request_queue * queue, int fd)
 
 	for (int i = 0; i < 4; i++) {
 		switch (i) {
-			case 0: {
-				queueHead = &(queue->reqHead);
-				break;
-			}
+		case 0: {
+			queueHead = &(queue->reqHead);
+			break;
+		}
 
-			case 1: {
-				queueHead = &(queue->renderHead);
-				break;
-			}
+		case 1: {
+			queueHead = &(queue->renderHead);
+			break;
+		}
 
-			case 2: {
-				queueHead = &(queue->reqPrioHead);
-				break;
-			}
+		case 2: {
+			queueHead = &(queue->reqPrioHead);
+			break;
+		}
 
-			case 3: {
-				queueHead = &(queue->reqBulkHead);
-				break;
-			}
+		case 3: {
+			queueHead = &(queue->reqBulkHead);
+			break;
+		}
 		}
 
 		item = queueHead->next;
@@ -275,7 +271,7 @@ void request_queue_clear_requests_by_fd(struct request_queue * queue, int fd)
 	pthread_mutex_unlock(&(queue->qLock));
 }
 
-enum protoCmd request_queue_add_request(struct request_queue * queue, struct item *item)
+enum protoCmd request_queue_add_request(struct request_queue *queue, struct item *item)
 {
 	enum protoCmd status;
 	const struct protocol *req;
@@ -360,7 +356,7 @@ enum protoCmd request_queue_add_request(struct request_queue * queue, struct ite
 	return (list == &(queue->dirtyHead)) ? cmdNotDone : cmdIgnore;
 }
 
-void request_queue_remove_request(struct request_queue * queue, struct item * request, int render_time)
+void request_queue_remove_request(struct request_queue *queue, struct item *request, int render_time)
 {
 	pthread_mutex_lock(&(queue->qLock));
 
@@ -370,33 +366,33 @@ void request_queue_remove_request(struct request_queue * queue, struct item * re
 
 	if (render_time > 0) {
 		switch (request->originatedQueue) {
-			case queueRequestPrio: {
-				queue->stats.timeReqPrioRender += render_time;
-				break;
-			}
+		case queueRequestPrio: {
+			queue->stats.timeReqPrioRender += render_time;
+			break;
+		}
 
-			case queueRequest: {
-				queue->stats.timeReqRender += render_time;
-				break;
-			}
+		case queueRequest: {
+			queue->stats.timeReqRender += render_time;
+			break;
+		}
 
-			case queueRequestLow: {
-				queue->stats.timeReqLowRender += render_time;
-				break;
-			}
+		case queueRequestLow: {
+			queue->stats.timeReqLowRender += render_time;
+			break;
+		}
 
-			case queueDirty: {
-				queue->stats.timeReqDirty += render_time;
-				break;
-			}
+		case queueDirty: {
+			queue->stats.timeReqDirty += render_time;
+			break;
+		}
 
-			case queueRequestBulk: {
-				queue->stats.timeReqBulkRender += render_time;
-				break;
-			}
+		case queueRequestBulk: {
+			queue->stats.timeReqBulkRender += render_time;
+			break;
+		}
 
-			default:
-				break;
+		default:
+			break;
 		}
 
 		queue->stats.noZoomRender[request->req.z]++;
@@ -409,51 +405,51 @@ void request_queue_remove_request(struct request_queue * queue, struct item * re
 	pthread_mutex_unlock(&(queue->qLock));
 }
 
-int request_queue_no_requests_queued(struct request_queue * queue, enum protoCmd priority)
+int request_queue_no_requests_queued(struct request_queue *queue, enum protoCmd priority)
 {
 	int noReq = -1;
 	pthread_mutex_lock(&(queue->qLock));
 
 	switch (priority) {
-		case cmdRenderPrio:
-			noReq = queue->reqPrioNum;
-			break;
+	case cmdRenderPrio:
+		noReq = queue->reqPrioNum;
+		break;
 
-		case cmdRender:
-			noReq = queue->reqNum;
-			break;
+	case cmdRender:
+		noReq = queue->reqNum;
+		break;
 
-		case cmdRenderLow:
-			noReq = queue->reqLowNum;
-			break;
+	case cmdRenderLow:
+		noReq = queue->reqLowNum;
+		break;
 
-		case cmdDirty:
-			noReq = queue->dirtyNum;
-			break;
+	case cmdDirty:
+		noReq = queue->dirtyNum;
+		break;
 
-		case cmdRenderBulk:
-			noReq = queue->reqBulkNum;
-			break;
+	case cmdRenderBulk:
+		noReq = queue->reqBulkNum;
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 
 	pthread_mutex_unlock(&queue->qLock);
 	return noReq;
 }
 
-void request_queue_copy_stats(struct request_queue * queue, stats_struct * stats)
+void request_queue_copy_stats(struct request_queue *queue, stats_struct *stats)
 {
 	pthread_mutex_lock(&(queue->qLock));
 	memcpy(stats, &(queue->stats), sizeof(stats_struct));
 	pthread_mutex_unlock(&queue->qLock);
 }
 
-struct request_queue * request_queue_init()
+struct request_queue *request_queue_init()
 {
 	int res;
-	struct request_queue * queue = calloc(1, sizeof(struct request_queue));
+	struct request_queue *queue = calloc(1, sizeof(struct request_queue));
 
 	if (queue == NULL) {
 		return NULL;
@@ -490,15 +486,15 @@ struct request_queue * request_queue_init()
 	queue->dirtyHead.next = queue->dirtyHead.prev = &(queue->dirtyHead);
 	queue->renderHead.next = queue->renderHead.prev = &(queue->renderHead);
 	queue->hashidxSize = HASHIDX_SIZE;
-	queue->item_hashidx = (struct item_idx *) malloc(sizeof(struct item_idx) * queue->hashidxSize);
+	queue->item_hashidx = (struct item_idx *)malloc(sizeof(struct item_idx) * queue->hashidxSize);
 	bzero(queue->item_hashidx, sizeof(struct item_idx) * queue->hashidxSize);
 
 	return queue;
 }
 
-void request_queue_close(struct request_queue * queue)
+void request_queue_close(struct request_queue *queue)
 {
-	//TODO: Free items if the queues are not empty at closing time
+	// TODO: Free items if the queues are not empty at closing time
 	pthread_mutex_destroy(&(queue->qLock));
 	free(queue->item_hashidx);
 	free(queue);

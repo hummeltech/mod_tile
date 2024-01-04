@@ -329,7 +329,7 @@ static enum protoCmd render(Map &m, const char *tile_dir, char *xmlname, project
 
 	mapnik::image_view<mapnik::image_data_32> vw(128, 128, 256, 256, buf.data());
 	g_logger(G_LOG_LEVEL_DEBUG, "Render %i %i %i %s", z, x, y, filename)
-	mapnik::save_to_file(vw, tmp, outputFormat);
+	    mapnik::save_to_file(vw, tmp, outputFormat);
 
 	if (rename(tmp, filename)) {
 		perror(tmp);

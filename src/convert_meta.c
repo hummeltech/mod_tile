@@ -17,28 +17,27 @@
 
 #define _GNU_SOURCE
 
+#include "dir_utils.h"
+#include "render_config.h"
+#include "store.h"
+#include <assert.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <getopt.h>
+#include <limits.h>
+#include <math.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/un.h>
-#include <poll.h>
-#include <errno.h>
-#include <math.h>
-#include <getopt.h>
-#include <time.h>
 #include <sys/types.h>
-#include <dirent.h>
-#include <assert.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <string.h>
-#include "render_config.h"
-#include "dir_utils.h"
-#include "store.h"
+#include <sys/un.h>
+#include <time.h>
+#include <unistd.h>
 
 char *tile_dir = RENDERD_TILE_DIR;
 
@@ -63,7 +62,7 @@ void display_rate(struct timeval start, struct timeval end, int num)
 	int d_s, d_us;
 	float sec;
 
-	d_s  = end.tv_sec  - start.tv_sec;
+	d_s = end.tv_sec - start.tv_sec;
 	d_us = end.tv_usec - start.tv_usec;
 
 	sec = d_s + d_us / 1000000.0;
@@ -79,7 +78,7 @@ static void descend(const char *search)
 	char path[PATH_MAX];
 
 	if (!tiles) {
-		//fprintf(stderr, "Unable to open directory: %s\n", search);
+		// fprintf(stderr, "Unable to open directory: %s\n", search);
 		return;
 	}
 
@@ -87,7 +86,7 @@ static void descend(const char *search)
 		struct stat b;
 		char *p;
 
-		//check_load();
+		// check_load();
 
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) {
 			continue;
@@ -122,7 +121,6 @@ static void descend(const char *search)
 	closedir(tiles);
 }
 
-
 int main(int argc, char **argv)
 {
 	int z, c;
@@ -131,15 +129,14 @@ int main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
-			{"map", 1, 0, 'm'},
-			{"min-zoom", 1, 0, 'z'},
-			{"max-zoom", 1, 0, 'Z'},
-			{"unpack", 0, 0, 'u'},
-			{"tile-dir", 1, 0, 't'},
-			{"verbose", 0, 0, 'v'},
-			{"help", 0, 0, 'h'},
-			{0, 0, 0, 0}
-		};
+		    {"map", 1, 0, 'm'},
+		    {"min-zoom", 1, 0, 'z'},
+		    {"max-zoom", 1, 0, 'Z'},
+		    {"unpack", 0, 0, 'u'},
+		    {"tile-dir", 1, 0, 't'},
+		    {"verbose", 0, 0, 'v'},
+		    {"help", 0, 0, 'h'},
+		    {0, 0, 0, 0}};
 
 		c = getopt_long(argc, argv, "uhvz:Z:m:t:", long_options, &option_index);
 
@@ -148,55 +145,55 @@ int main(int argc, char **argv)
 		}
 
 		switch (c) {
-			case 'z':
-				minZoom = atoi(optarg);
+		case 'z':
+			minZoom = atoi(optarg);
 
-				if (minZoom < 0 || minZoom > MAX_ZOOM) {
-					fprintf(stderr, "Invalid minimum zoom selected, must be between 0 and %d\n", MAX_ZOOM);
-					return 1;
-				}
+			if (minZoom < 0 || minZoom > MAX_ZOOM) {
+				fprintf(stderr, "Invalid minimum zoom selected, must be between 0 and %d\n", MAX_ZOOM);
+				return 1;
+			}
 
-				break;
+			break;
 
-			case 'Z':
-				maxZoom = atoi(optarg);
+		case 'Z':
+			maxZoom = atoi(optarg);
 
-				if (maxZoom < 0 || maxZoom > MAX_ZOOM) {
-					fprintf(stderr, "Invalid maximum zoom selected, must be between 0 and %d\n", MAX_ZOOM);
-					return 1;
-				}
+			if (maxZoom < 0 || maxZoom > MAX_ZOOM) {
+				fprintf(stderr, "Invalid maximum zoom selected, must be between 0 and %d\n", MAX_ZOOM);
+				return 1;
+			}
 
-				break;
+			break;
 
-			case 'm':
-				map = strdup(optarg);
-				break;
+		case 'm':
+			map = strdup(optarg);
+			break;
 
-			case 't':
-				tile_dir = strdup(optarg);
-				break;
+		case 't':
+			tile_dir = strdup(optarg);
+			break;
 
-			case 'u':
-				unpack = 1;
-				break;
+		case 'u':
+			unpack = 1;
+			break;
 
-			case 'v':
-				verbose = 1;
-				break;
+		case 'v':
+			verbose = 1;
+			break;
 
-			case 'h':
-				fprintf(stderr, "Usage: convert_meta [OPTION] ...\n");
-				fprintf(stderr, "Convert the rendered PNGs into the more efficient .meta format\n");
-				fprintf(stderr, "  -m, --map       convert tiles in this map (default is 'default')\n");
-				fprintf(stderr, "  -t, --tile-dir  tile cache directory (default is '" RENDERD_TILE_DIR "')\n");
-				fprintf(stderr, "  -u, --unpack    unpack the .meta files back to PNGs\n");
-				fprintf(stderr, "  -z, --min-zoom  only process tiles greater or equal to this zoom level (default is 0)\n");
-				fprintf(stderr, "  -Z, --max-zoom  only process tiles less than or equal to this zoom level (default is %d)\n", MAX_ZOOM);
-				return -1;
+		case 'h':
+			fprintf(stderr, "Usage: convert_meta [OPTION] ...\n");
+			fprintf(stderr, "Convert the rendered PNGs into the more efficient .meta format\n");
+			fprintf(stderr, "  -m, --map       convert tiles in this map (default is 'default')\n");
+			fprintf(stderr, "  -t, --tile-dir  tile cache directory (default is '" RENDERD_TILE_DIR "')\n");
+			fprintf(stderr, "  -u, --unpack    unpack the .meta files back to PNGs\n");
+			fprintf(stderr, "  -z, --min-zoom  only process tiles greater or equal to this zoom level (default is 0)\n");
+			fprintf(stderr, "  -Z, --max-zoom  only process tiles less than or equal to this zoom level (default is %d)\n", MAX_ZOOM);
+			return -1;
 
-			default:
-				fprintf(stderr, "unhandled char '%c'\n", c);
-				break;
+		default:
+			fprintf(stderr, "unhandled char '%c'\n", c);
+			break;
 		}
 	}
 

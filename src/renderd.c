@@ -44,8 +44,8 @@
 #include "renderd_config.h"
 #include "request_queue.h"
 
-#define PFD_LISTEN        0
-#define PFD_EXIT_PIPE     1
+#define PFD_LISTEN 0
+#define PFD_EXIT_PIPE 1
 #define PFD_SPECIAL_COUNT 2
 
 #ifndef MAIN_ALREADY_DEFINED
@@ -57,42 +57,39 @@ static pthread_t stats_thread;
 
 static int exit_pipe_fd;
 
-struct request_queue * render_request_queue;
+struct request_queue *render_request_queue;
 
 static const char *cmdStr(enum protoCmd c)
 {
 	switch (c) {
-		case cmdIgnore:
-			return "Ignore";
+	case cmdIgnore:
+		return "Ignore";
 
-		case cmdRender:
-			return "Render";
+	case cmdRender:
+		return "Render";
 
-		case cmdRenderPrio:
-			return "RenderPrio";
+	case cmdRenderPrio:
+		return "RenderPrio";
 
-		case cmdRenderLow:
-			return "RenderLow";
+	case cmdRenderLow:
+		return "RenderLow";
 
-		case cmdRenderBulk:
-			return "RenderBulk";
+	case cmdRenderBulk:
+		return "RenderBulk";
 
-		case cmdDirty:
-			return "Dirty";
+	case cmdDirty:
+		return "Dirty";
 
-		case cmdDone:
-			return "Done";
+	case cmdDone:
+		return "Done";
 
-		case cmdNotDone:
-			return "NotDone";
+	case cmdNotDone:
+		return "NotDone";
 
-		default:
-			return "Unknown";
+	default:
+		return "Unknown";
 	}
 }
-
-
-
 
 void send_response(struct item *item, enum protoCmd rsp, int render_time)
 {
@@ -107,7 +104,6 @@ void send_response(struct item *item, enum protoCmd rsp, int render_time)
 			g_logger(G_LOG_LEVEL_DEBUG, "Sending message %s to %d", cmdStr(rsp), item->fd);
 
 			send_cmd(req, item->fd);
-
 		}
 
 		prev = item;
@@ -118,7 +114,7 @@ void send_response(struct item *item, enum protoCmd rsp, int render_time)
 
 enum protoCmd rx_request(struct protocol *req, int fd)
 {
-	struct item  *item;
+	struct item *item;
 
 	// Upgrade version 1 and 2 to  version 3
 	if (req->ver == 1) {
@@ -222,7 +218,7 @@ void process_loop(int listen_fd)
 			g_logger(G_LOG_LEVEL_DEBUG, "Data is available now on %d fds", num);
 
 			if (pfd[PFD_LISTEN].revents & POLLIN) {
-				incoming = accept(listen_fd, (struct sockaddr *) &in_addr, &in_addrlen);
+				incoming = accept(listen_fd, (struct sockaddr *)&in_addr, &in_addrlen);
 
 				if (incoming < 0) {
 					g_logger(G_LOG_LEVEL_ERROR, "accept(): %s", strerror(errno));
@@ -252,7 +248,7 @@ void process_loop(int listen_fd)
 					if (add) {
 						pfd[i + PFD_SPECIAL_COUNT].fd = incoming;
 						pfd[i + PFD_SPECIAL_COUNT].events = POLLIN;
-						num_conns ++;
+						num_conns++;
 						g_logger(G_LOG_LEVEL_DEBUG, "Got incoming connection, fd %d, number %d, total conns %d, total slots %d", incoming, i, num_conns, num_cslots);
 					}
 				}
@@ -275,7 +271,7 @@ void process_loop(int listen_fd)
 						request_queue_clear_requests_by_fd(render_request_queue, fd);
 						close(fd);
 						pfd[i + PFD_SPECIAL_COUNT].fd = -1;
-					} else  {
+					} else {
 						enum protoCmd rsp = rx_request(&cmd, fd);
 
 						if (rsp == cmdNotDone) {
@@ -296,7 +292,7 @@ void process_loop(int listen_fd)
  * Periodically write out current stats to a stats file. This information
  * can then be used to monitor performance of renderd e.g. with a munin plugin
  */
-void *stats_writeout_thread(void * arg)
+void *stats_writeout_thread(void *arg)
 {
 	stats_struct lStats;
 	int dirtQueueLength;
@@ -311,7 +307,7 @@ void *stats_writeout_thread(void * arg)
 
 	snprintf(tmpName, sizeof(tmpName), "%s.tmp", config.stats_filename);
 
-	g_logger(G_LOG_LEVEL_DEBUG, "Starting stats writeout thread: %lu", (unsigned long) pthread_self());
+	g_logger(G_LOG_LEVEL_DEBUG, "Starting stats writeout thread: %lu", (unsigned long)pthread_self());
 
 	while (1) {
 		request_queue_copy_stats(render_request_queue, &lStats);
@@ -322,7 +318,7 @@ void *stats_writeout_thread(void * arg)
 		dirtQueueLength = request_queue_no_requests_queued(render_request_queue, cmdDirty);
 		reqBulkQueueLength = request_queue_no_requests_queued(render_request_queue, cmdRenderBulk);
 
-		FILE * statfile = fopen(tmpName, "w");
+		FILE *statfile = fopen(tmpName, "w");
 
 		if (statfile == NULL) {
 			g_logger(G_LOG_LEVEL_WARNING, "Failed to open stats file: %i", errno);
@@ -381,10 +377,10 @@ void *stats_writeout_thread(void * arg)
 	return NULL;
 }
 
-int client_socket_init(renderd_config * sConfig)
+int client_socket_init(renderd_config *sConfig)
 {
 	int fd, s;
-	struct sockaddr_un * addrU;
+	struct sockaddr_un *addrU;
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
 	char portnum[16];
@@ -394,10 +390,10 @@ int client_socket_init(renderd_config * sConfig)
 		g_logger(G_LOG_LEVEL_INFO, "Initialising TCP/IP client socket to %s:%i", sConfig->iphostname, sConfig->ipport);
 
 		memset(&hints, 0, sizeof(struct addrinfo));
-		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+		hints.ai_family = AF_UNSPEC;	 /* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM; /* TCP socket */
 		hints.ai_flags = 0;
-		hints.ai_protocol = 0;          /* Any protocol */
+		hints.ai_protocol = 0; /* Any protocol */
 		hints.ai_canonname = NULL;
 		hints.ai_addr = NULL;
 		hints.ai_next = NULL;
@@ -414,17 +410,17 @@ int client_socket_init(renderd_config * sConfig)
 		   Try each address until we successfully connect. */
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
 			switch (rp->ai_family) {
-				case AF_INET:
-					inet_ntop(AF_INET, &(((struct sockaddr_in *)rp->ai_addr)->sin_addr), ipstring, rp->ai_addrlen);
-					break;
+			case AF_INET:
+				inet_ntop(AF_INET, &(((struct sockaddr_in *)rp->ai_addr)->sin_addr), ipstring, rp->ai_addrlen);
+				break;
 
-				case AF_INET6:
-					inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)rp->ai_addr)->sin6_addr), ipstring, rp->ai_addrlen);
-					break;
+			case AF_INET6:
+				inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)rp->ai_addr)->sin6_addr), ipstring, rp->ai_addrlen);
+				break;
 
-				default:
-					snprintf(ipstring, sizeof(ipstring), "address family %d", rp->ai_family);
-					break;
+			default:
+				snprintf(ipstring, sizeof(ipstring), "address family %d", rp->ai_family);
+				break;
 			}
 
 			g_logger(G_LOG_LEVEL_DEBUG, "Connecting TCP socket to rendering daemon at %s", ipstring);
@@ -468,7 +464,7 @@ int client_socket_init(renderd_config * sConfig)
 		addrU->sun_family = AF_UNIX;
 		strncpy(addrU->sun_path, sConfig->socketname, sizeof(addrU->sun_path) - 1);
 
-		if (connect(fd, (struct sockaddr *) addrU, sizeof(struct sockaddr_un)) < 0) {
+		if (connect(fd, (struct sockaddr *)addrU, sizeof(struct sockaddr_un)) < 0) {
 			g_logger(G_LOG_LEVEL_WARNING, "socket connect failed for: %s",
 				 sConfig->socketname);
 			close(fd);
@@ -506,7 +502,7 @@ int server_socket_init(renderd_config *sConfig)
 		addrI.sin6_addr = in6addr_any;
 		addrI.sin6_port = htons(sConfig->ipport);
 
-		if (bind(fd, (struct sockaddr *) &addrI, sizeof(addrI)) < 0) {
+		if (bind(fd, (struct sockaddr *)&addrI, sizeof(addrI)) < 0) {
 			g_logger(G_LOG_LEVEL_CRITICAL, "socket bind failed for: %s:%i",
 				 sConfig->iphostname, sConfig->ipport);
 			close(fd);
@@ -531,7 +527,7 @@ int server_socket_init(renderd_config *sConfig)
 
 		old = umask(0); // Need daemon socket to be writeable by apache
 
-		if (bind(fd, (struct sockaddr *) &addrU, sizeof(addrU)) < 0) {
+		if (bind(fd, (struct sockaddr *)&addrU, sizeof(addrU)) < 0) {
 			g_logger(G_LOG_LEVEL_CRITICAL, "socket bind failed for: %s", sConfig->socketname);
 			close(fd);
 			exit(3);
@@ -549,7 +545,6 @@ int server_socket_init(renderd_config *sConfig)
 	g_logger(G_LOG_LEVEL_DEBUG, "Created server socket %i", fd);
 
 	return fd;
-
 }
 
 /**
@@ -561,23 +556,23 @@ int server_socket_init(renderd_config *sConfig)
  * rendererd immediately. Thus overall, requests should be nicely load balanced between
  * all the rendering threads available both locally and in the slaves.
  */
-void *slave_thread(void * arg)
+void *slave_thread(void *arg)
 {
-	renderd_config * sConfig = (renderd_config *) arg;
+	renderd_config *sConfig = (renderd_config *)arg;
 
 	int pfd = FD_INVALID;
 	int retry, seconds = 30;
 	size_t ret_size;
 
-	struct protocol * resp;
-	struct protocol * req_slave;
+	struct protocol *resp;
+	struct protocol *req_slave;
 
 	req_slave = (struct protocol *)malloc(sizeof(struct protocol));
 	resp = (struct protocol *)malloc(sizeof(struct protocol));
 	bzero(req_slave, sizeof(struct protocol));
 	bzero(resp, sizeof(struct protocol));
 
-	g_logger(G_LOG_LEVEL_DEBUG, "Starting slave thread: %lu", (unsigned long) pthread_self());
+	g_logger(G_LOG_LEVEL_DEBUG, "Starting slave thread: %lu", (unsigned long)pthread_self());
 
 	while (1) {
 		if (pfd == FD_INVALID) {
@@ -622,7 +617,7 @@ void *slave_thread(void * arg)
 				ret_size = send_cmd(req_slave, pfd);
 
 				if (ret_size == sizeof(struct protocol)) {
-					//correctly sent command to slave
+					// correctly sent command to slave
 					break;
 				}
 
@@ -654,8 +649,7 @@ void *slave_thread(void * arg)
 			retry = 10;
 
 			while ((ret_size < sizeof(struct protocol)) && (retry > 0)) {
-				ret_size = recv(pfd, resp + ret_size, (sizeof(struct protocol)
-								       - ret_size), 0);
+				ret_size = recv(pfd, resp + ret_size, (sizeof(struct protocol) - ret_size), 0);
 
 				if ((errno == EPIPE) || ret_size == 0) {
 					close(pfd);
@@ -689,9 +683,9 @@ void *slave_thread(void * arg)
 						g_logger(G_LOG_LEVEL_ERROR, "Request from Renderd slave at %s did not complete correctly", sConfig->socketname);
 					}
 
-					//Sleep for a while to make sure we don't overload the renderer
-					//This only happens if it didn't correctly block on the rendering
-					//request
+					// Sleep for a while to make sure we don't overload the renderer
+					// This only happens if it didn't correctly block on the rendering
+					// request
 					sleep(seconds);
 				}
 			}
@@ -725,14 +719,13 @@ int main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
-			{"config",     required_argument, 0, 'c'},
-			{"foreground", no_argument,       0, 'f'},
-			{"slave",      required_argument, 0, 's'},
+		    {"config", required_argument, 0, 'c'},
+		    {"foreground", no_argument, 0, 'f'},
+		    {"slave", required_argument, 0, 's'},
 
-			{"help",       no_argument,       0, 'h'},
-			{"version",    no_argument,       0, 'V'},
-			{0, 0, 0, 0}
-		};
+		    {"help", no_argument, 0, 'h'},
+		    {"version", no_argument, 0, 'V'},
+		    {0, 0, 0, 0}};
 
 		c = getopt_long(argc, argv, "c:fs:hV", long_options, &option_index);
 
@@ -741,46 +734,46 @@ int main(int argc, char **argv)
 		}
 
 		switch (c) {
-			case 'c': /* -c, --config */
-				config_file_name = strndup(optarg, PATH_MAX);
-				config_file_name_passed = 1;
+		case 'c': /* -c, --config */
+			config_file_name = strndup(optarg, PATH_MAX);
+			config_file_name_passed = 1;
 
-				struct stat buffer;
+			struct stat buffer;
 
-				if (stat(config_file_name, &buffer) != 0) {
-					g_logger(G_LOG_LEVEL_CRITICAL, "Config file '%s' does not exist, please specify a valid file", config_file_name);
-					return 1;
-				}
-
-				break;
-
-			case 'f': /* -f, --foreground */
-				foreground = 1;
-				break;
-
-			case 's': /* -s, --slave */
-				active_renderd_section_num = min_max_int_opt(optarg, "active renderd section", 0, -1);
-				active_renderd_section_num_passed = 1;
-				break;
-
-			case 'h': /* -h, --help */
-				fprintf(stderr, "Usage: renderd [OPTION] ...\n");
-				fprintf(stderr, "Mapnik rendering daemon\n");
-				fprintf(stderr, "  -c, --config=CONFIG               specify the renderd config file (default is '%s')\n", config_file_name_default);
-				fprintf(stderr, "  -f, --foreground                  run in foreground\n");
-				fprintf(stderr, "  -s, --slave=CONFIG_SECTION_NR     set which renderd section to use (default is '%i')\n", active_renderd_section_num_default);
-				fprintf(stderr, "\n");
-				fprintf(stderr, "  -h, --help                        display this help and exit\n");
-				fprintf(stderr, "  -V, --version                     display the version number and exit\n");
-				return 0;
-
-			case 'V': /* -V, --version */
-				fprintf(stdout, "%s\n", VERSION);
-				return 0;
-
-			default:
-				fprintf(stderr, "unknown config option '%c'\n", c);
+			if (stat(config_file_name, &buffer) != 0) {
+				g_logger(G_LOG_LEVEL_CRITICAL, "Config file '%s' does not exist, please specify a valid file", config_file_name);
 				return 1;
+			}
+
+			break;
+
+		case 'f': /* -f, --foreground */
+			foreground = 1;
+			break;
+
+		case 's': /* -s, --slave */
+			active_renderd_section_num = min_max_int_opt(optarg, "active renderd section", 0, -1);
+			active_renderd_section_num_passed = 1;
+			break;
+
+		case 'h': /* -h, --help */
+			fprintf(stderr, "Usage: renderd [OPTION] ...\n");
+			fprintf(stderr, "Mapnik rendering daemon\n");
+			fprintf(stderr, "  -c, --config=CONFIG               specify the renderd config file (default is '%s')\n", config_file_name_default);
+			fprintf(stderr, "  -f, --foreground                  run in foreground\n");
+			fprintf(stderr, "  -s, --slave=CONFIG_SECTION_NR     set which renderd section to use (default is '%i')\n", active_renderd_section_num_default);
+			fprintf(stderr, "\n");
+			fprintf(stderr, "  -h, --help                        display this help and exit\n");
+			fprintf(stderr, "  -V, --version                     display the version number and exit\n");
+			return 0;
+
+		case 'V': /* -V, --version */
+			fprintf(stdout, "%s\n", VERSION);
+			return 0;
+
+		default:
+			fprintf(stderr, "unknown config option '%c'\n", c);
+			return 1;
 		}
 	}
 
@@ -820,7 +813,7 @@ int main(int argc, char **argv)
 		return 6;
 	}
 
-	sigExitAction.sa_handler = (void *) request_exit;
+	sigExitAction.sa_handler = (void *)request_exit;
 
 	sigaction(SIGHUP, &sigExitAction, NULL);
 
@@ -842,8 +835,8 @@ int main(int argc, char **argv)
 		FILE *pidfile = fopen(config.pid_filename, "w");
 
 		if (pidfile) {
-			(void) fprintf(pidfile, "%d\n", getpid());
-			(void) fclose(pidfile);
+			(void)fprintf(pidfile, "%d\n", getpid());
+			(void)fclose(pidfile);
 		}
 	}
 
@@ -857,7 +850,7 @@ int main(int argc, char **argv)
 		g_logger(G_LOG_LEVEL_INFO, "No stats file specified in config. Stats reporting disabled");
 	}
 
-	render_threads = (pthread_t *) malloc(sizeof(pthread_t) * config.num_threads);
+	render_threads = (pthread_t *)malloc(sizeof(pthread_t) * config.num_threads);
 
 	for (i = 0; i < config.num_threads; i++) {
 		if (pthread_create(&render_threads[i], NULL, render_thread, (void *)maps)) {
@@ -870,11 +863,11 @@ int main(int argc, char **argv)
 	if (active_renderd_section_num == 0) {
 		// Only the master renderd opens connections to its slaves
 		k = 0;
-		slave_threads = (pthread_t *) malloc(sizeof(pthread_t) * num_slave_threads);
+		slave_threads = (pthread_t *)malloc(sizeof(pthread_t) * num_slave_threads);
 
 		for (i = 1; i < MAX_SLAVES; i++) {
 			for (j = 0; j < config_slaves[i].num_threads; j++) {
-				if (pthread_create(&slave_threads[k++], NULL, slave_thread, (void *) &config_slaves[i])) {
+				if (pthread_create(&slave_threads[k++], NULL, slave_thread, (void *)&config_slaves[i])) {
 					g_logger(G_LOG_LEVEL_CRITICAL, "Could not spawn slave thread");
 					close(fd);
 					return 7;

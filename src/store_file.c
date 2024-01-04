@@ -23,29 +23,28 @@
  * utilisation of disk space.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <utime.h>
-#include <fcntl.h>
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <utime.h>
 
-#include "store.h"
+#include "g_logger.h"
 #include "metatile.h"
+#include "protocol.h"
 #include "render_config.h"
+#include "store.h"
 #include "store_file.h"
 #include "store_file_utils.h"
-#include "protocol.h"
-#include "g_logger.h"
 
-
-static time_t getPlanetTime(const char * tile_dir, const char * xmlname)
+static time_t getPlanetTime(const char *tile_dir, const char *xmlname)
 {
 	struct stat st_stat;
 	char filename[PATH_MAX];
@@ -64,7 +63,7 @@ static time_t getPlanetTime(const char * tile_dir, const char * xmlname)
 	return st_stat.st_mtime;
 }
 
-static int file_tile_read(struct storage_backend * store, const char *xmlconfig, const char *options, int x, int y, int z, char *buf, size_t sz, int * compressed, char * log_msg)
+static int file_tile_read(struct storage_backend *store, const char *xmlconfig, const char *options, int x, int y, int z, char *buf, size_t sz, int *compressed, char *log_msg)
 {
 
 	char path[PATH_MAX];
@@ -88,7 +87,7 @@ static int file_tile_read(struct storage_backend * store, const char *xmlconfig,
 
 	while (pos < header_len) {
 		size_t len = header_len - pos;
-		int got = read(fd, ((unsigned char *) m) + pos, len);
+		int got = read(fd, ((unsigned char *)m) + pos, len);
 
 		if (got < 0) {
 			snprintf(log_msg, PATH_MAX - 1, "Failed to read complete header for metatile %s Reason: %s\n", path, strerror(errno));
@@ -131,7 +130,7 @@ static int file_tile_read(struct storage_backend * store, const char *xmlconfig,
 	}
 
 	file_offset = m->index[meta_offset].offset;
-	tile_size   = m->index[meta_offset].size;
+	tile_size = m->index[meta_offset].size;
 
 	free(m);
 
@@ -169,7 +168,7 @@ static int file_tile_read(struct storage_backend * store, const char *xmlconfig,
 	return pos;
 }
 
-static struct stat_info file_tile_stat(struct storage_backend * store, const char *xmlconfig, const char *options, int x, int y, int z)
+static struct stat_info file_tile_stat(struct storage_backend *store, const char *xmlconfig, const char *options, int x, int y, int z)
 {
 	struct stat_info tile_stat;
 	struct stat st_stat;
@@ -198,7 +197,7 @@ static struct stat_info file_tile_stat(struct storage_backend * store, const cha
 	return tile_stat;
 }
 
-static char * file_tile_storage_id(struct storage_backend * store, const char *xmlconfig, const char *options, int x, int y, int z, char * string)
+static char *file_tile_storage_id(struct storage_backend *store, const char *xmlconfig, const char *options, int x, int y, int z, char *string)
 {
 	char meta_path[PATH_MAX];
 
@@ -207,25 +206,23 @@ static char * file_tile_storage_id(struct storage_backend * store, const char *x
 	return string;
 }
 
-
-static int file_metatile_write(struct storage_backend * store, const char *xmlconfig, const char *options, int x, int y, int z, const char *buf, int sz)
+static int file_metatile_write(struct storage_backend *store, const char *xmlconfig, const char *options, int x, int y, int z, const char *buf, int sz)
 {
 	int fd;
 	char meta_path[PATH_MAX];
-	char * tmp;
+	char *tmp;
 	int res;
 
 	xyzo_to_meta(meta_path, sizeof(meta_path), (char *)(store->storage_ctx), xmlconfig, options, x, y, z);
 	g_logger(G_LOG_LEVEL_DEBUG, "Creating and writing a metatile to %s", meta_path);
 
 	tmp = malloc(sizeof(char) * strlen(meta_path) + 24);
-	snprintf(tmp, strlen(meta_path) + 24, "%s.%lu", meta_path, (unsigned long) pthread_self());
+	snprintf(tmp, strlen(meta_path) + 24, "%s.%lu", meta_path, (unsigned long)pthread_self());
 
 	if (mkdirp(tmp)) {
 		free(tmp);
 		return -1;
 	}
-
 
 	fd = open(tmp, O_WRONLY | O_TRUNC | O_CREAT, 0666);
 
@@ -251,17 +248,17 @@ static int file_metatile_write(struct storage_backend * store, const char *xmlco
 	return sz;
 }
 
-static int file_metatile_delete(struct storage_backend * store, const char *xmlconfig, int x, int y, int z)
+static int file_metatile_delete(struct storage_backend *store, const char *xmlconfig, int x, int y, int z)
 {
 	char meta_path[PATH_MAX];
 
-	//TODO: deal with options
+	// TODO: deal with options
 	xyz_to_meta(meta_path, sizeof(meta_path), (char *)(store->storage_ctx), xmlconfig, x, y, z);
 	g_logger(G_LOG_LEVEL_DEBUG, "Deleting metatile from %s", meta_path);
 	return unlink(meta_path);
 }
 
-static int file_metatile_expire(struct storage_backend * store, const char *xmlconfig, int x, int y, int z)
+static int file_metatile_expire(struct storage_backend *store, const char *xmlconfig, int x, int y, int z)
 {
 
 	char name[PATH_MAX];
@@ -269,17 +266,17 @@ static int file_metatile_expire(struct storage_backend * store, const char *xmlc
 	static struct tm touchCalendar;
 	struct utimbuf touchTime;
 
-	//TODO: deal with options
+	// TODO: deal with options
 	xyz_to_meta(name, sizeof(name), store->storage_ctx, xmlconfig, x, y, z);
 
-	if (stat(name, &s) == 0) {// 0 is success
+	if (stat(name, &s) == 0) { // 0 is success
 		// tile exists on disk; mark it as expired
 
 		if (!gmtime_r(&(s.st_mtime), &touchCalendar)) {
 			touchTime.modtime = 315558000;
 		} else {
-			if (touchCalendar.tm_year > 105) { // Tile hasn't already been marked as expired
-				touchCalendar.tm_year -= 20; //Set back by 20 years, to keep the creation time as reference.
+			if (touchCalendar.tm_year > 105) {   // Tile hasn't already been marked as expired
+				touchCalendar.tm_year -= 20; // Set back by 20 years, to keep the creation time as reference.
 				touchTime.modtime = mktime(&touchCalendar);
 			} else {
 				touchTime.modtime = s.st_mtime;
@@ -296,17 +293,17 @@ static int file_metatile_expire(struct storage_backend * store, const char *xmlc
 	return 0;
 }
 
-static int file_close_storage(struct storage_backend * store)
+static int file_close_storage(struct storage_backend *store)
 {
 	free(store->storage_ctx);
 	store->storage_ctx = NULL;
 	return 0;
 }
 
-struct storage_backend * init_storage_file(const char * tile_dir)
+struct storage_backend *init_storage_file(const char *tile_dir)
 {
 
-	struct storage_backend * store = malloc(sizeof(struct storage_backend));
+	struct storage_backend *store = malloc(sizeof(struct storage_backend));
 
 	if (store == NULL) {
 		g_logger(G_LOG_LEVEL_ERROR, "init_storage_file: Failed to allocate memory for storage backend");
