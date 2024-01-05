@@ -84,8 +84,6 @@ render_old_SOURCES = \
 	src/g_logger.c
 render_old_LDADD = $(PTHREAD_CFLAGS) $(GLIB_LIBS)
 
-#convert_meta_SOURCES = src/dir_utils.c src/store.c src/convert_meta.c
-
 gen_tile_test_SOURCES = \
 	tests/gen_tile_test.cpp \
 	src/metatile.cpp \
