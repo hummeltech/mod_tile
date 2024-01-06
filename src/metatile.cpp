@@ -28,7 +28,7 @@
 #include "request_queue.h"
 #include "g_logger.h"
 
-
+#ifdef METATILE
 metaTile::metaTile(const std::string &xmlconfig, const std::string &options, int x, int y, int z):
 	x_(x), y_(y), z_(z), xmlconfig_(xmlconfig), options_(options)
 {
@@ -140,3 +140,4 @@ void metaTile::expire_tiles(int sock, char * host, char * uri)
 		}
 	}
 }
+#endif

@@ -104,7 +104,7 @@
 
 // Use this to enable meta-tiles which will render NxN tiles at once
 // Note: This should be a power of 2 (2, 4, 8, 16 ...)
-#define METATILE (8)
+//#define METATILE (8)
 //#undef METATILE
 
 //Fallback to standard tiles if meta tile doesn't exist

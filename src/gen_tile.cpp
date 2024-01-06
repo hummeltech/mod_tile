@@ -41,7 +41,10 @@
 #include "render_config.h"
 #include "renderd.h"
 #include "store.h"
+#include "store_file_utils.h"
+#ifdef METATILE
 #include "metatile.h"
+#endif
 #include "protocol.h"
 #include "request_queue.h"
 #include "cache_expire.h"
@@ -99,6 +102,7 @@ struct xmlmapconfig {
 	char xmluri[PATH_MAX];
 	char host[PATH_MAX];
 	char htcphost[PATH_MAX];
+	char tile_dir[PATH_MAX];
 	int htcpsock;
 	int tilesize;
 	double scale;
@@ -322,8 +326,8 @@ static enum protoCmd render(Map &m, const char *tile_dir, char *xmlname, project
 	double p1x = (x + 1) * 256.0;
 	double p1y = y * 256.0;
 
-	tiling.fromPixelToLL(p0x, p0y, z);
-	tiling.fromPixelToLL(p1x, p1y, z);
+	// tiling.fromPixelToLL(p0x, p0y, z);
+	// tiling.fromPixelToLL(p1x, p1y, z);
 
 	prj.forward(p0x, p0y);
 	prj.forward(p1x, p1y);
@@ -331,7 +335,7 @@ static enum protoCmd render(Map &m, const char *tile_dir, char *xmlname, project
 	mapnik::box2d<double> bbox(p0x, p0y, p1x, p1y);
 	bbox.width(bbox.width() * 2);
 	bbox.height(bbox.height() * 2);
-	m.zoomToBox(bbox);
+	m.zoom_to_box(bbox);
 
 	mapnik::image_32 buf(RENDER_SIZE, RENDER_SIZE);
 	mapnik::agg_renderer<mapnik::image_32> ren(m, buf);
@@ -345,8 +349,9 @@ static enum protoCmd render(Map &m, const char *tile_dir, char *xmlname, project
 
 	snprintf(tmp, sizeof(tmp), "%s.tmp", filename);
 
-	mapnik::image_view<mapnik::image_data_32> vw(128, 128, 256, 256, buf.data());
-	g_logger(G_LOG_LEVEL_DEBUG, "Render %i %i %i %s", z, x, y, filename)
+	mapnik::image_view<mapnik::image<mapnik::rgba8_t>> vw1(128, 128, 256, 256, buf);
+	struct mapnik::image_view_any vw(vw1);
+	g_logger(G_LOG_LEVEL_DEBUG, "Render %i %i %i %s", z, x, y, filename);
 	mapnik::save_to_file(vw, tmp, outputFormat);
 
 	if (rename(tmp, filename)) {
@@ -383,13 +388,13 @@ void *render_thread(void * arg)
 		strcpy(maps[iMaxConfigs].xmlname, parentxmlconfig[iMaxConfigs].xmlname);
 		strcpy(maps[iMaxConfigs].xmlfile, parentxmlconfig[iMaxConfigs].xmlfile);
 		strcpy(maps[iMaxConfigs].output_format, parentxmlconfig[iMaxConfigs].output_format);
+		strcpy(maps[iMaxConfigs].tile_dir, parentxmlconfig[iMaxConfigs].tile_dir);
 		maps[iMaxConfigs].store = init_storage_backend(parentxmlconfig[iMaxConfigs].tile_dir);
 		maps[iMaxConfigs].tilesize  = parentxmlconfig[iMaxConfigs].tile_px_size;
 		maps[iMaxConfigs].scale  = parentxmlconfig[iMaxConfigs].scale_factor;
 		maps[iMaxConfigs].minzoom = parentxmlconfig[iMaxConfigs].min_zoom;
 		maps[iMaxConfigs].maxzoom = parentxmlconfig[iMaxConfigs].max_zoom;
 		maps[iMaxConfigs].parameterize_function = init_parameterization_function(parentxmlconfig[iMaxConfigs].parameterization);
-
 
 		if (maps[iMaxConfigs].store) {
 			maps[iMaxConfigs].ok = 1;
@@ -491,7 +496,7 @@ void *render_thread(void * arg)
 									tiles.save(maps[i].store);
 #ifdef HTCP_EXPIRE_CACHE
 									tiles.expire_tiles(maps[i].htcpsock, maps[i].host, maps[i].xmluri);
-#endif
+#endif //HTCP_EXPIRE_CACHE
 
 								} catch (std::exception const& ex) {
 									g_logger(G_LOG_LEVEL_ERROR, "Received exception when writing metatile to disk: %s", ex.what());
@@ -508,35 +513,36 @@ void *render_thread(void * arg)
 			ret = render(maps[i].map, maps[i].tile_dir, req->xmlname, maps[i].prj, req->x, req->y, req->z, maps[i].output_format);
 #ifdef HTCP_EXPIRE_CACHE
 			cache_expire(maps[i].htcpsock, maps[i].host, maps[i].xmluri, req->x, req->y, req->z);
-#endif
-#endif //METATILE
-						} else {
-							g_logger(G_LOG_LEVEL_WARNING, "Received request for map layer %s is outside of acceptable bounds z(%i), x(%i), y(%i)",
-								 req->xmlname, req->z, req->x, req->y);
-							ret = cmdIgnore;
-						}
-					} else {
-						g_logger(G_LOG_LEVEL_ERROR, "Received request for map layer '%s' which failed to load", req->xmlname);
-						ret = cmdNotDone;
-					}
-
-					send_response(item, ret, render_time);
-
-					if ((ret != cmdDone) && (ret != cmdIgnore)) {
-						sleep(10);        //Something went wrong with rendering, delay next processing to allow temporary issues to fix them selves
-					}
-
-					break;
-				}
-			}
-
-			if (i == iMaxConfigs) {
-				g_logger(G_LOG_LEVEL_ERROR, "No map for: %s", req->xmlname);
-			}
+#endif //HTCP_EXPIRE_CACHE
 		} else {
-			sleep(1); // TODO: Use an event to indicate there are new requests
+			g_logger(G_LOG_LEVEL_WARNING, "Received request for map layer %s is outside of acceptable bounds z(%i), x(%i), y(%i)",
+				 req->xmlname, req->z, req->x, req->y);
+			ret = cmdIgnore;
 		}
+	} else {
+		g_logger(G_LOG_LEVEL_ERROR, "Received request for map layer '%s' which failed to load", req->xmlname);
+		ret = cmdNotDone;
 	}
 
-	return NULL;
+	send_response(item, ret, render_time);
+
+	if ((ret != cmdDone) && (ret != cmdIgnore)) {
+		sleep(10);        //Something went wrong with rendering, delay next processing to allow temporary issues to fix them selves
+	}
+
+	break;
 }
+
+#endif //METATILE
+						}
+
+						if (i == iMaxConfigs) {
+							g_logger(G_LOG_LEVEL_ERROR, "No map for: %s", req->xmlname);
+						}
+					} else {
+						sleep(1); // TODO: Use an event to indicate there are new requests
+					}
+				}
+
+				return NULL;
+			}

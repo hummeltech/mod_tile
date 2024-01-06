@@ -62,9 +62,13 @@ private:
 	int x_, y_, z_;
 	std::string xmlconfig_;
 	std::string options_;
+#ifdef METATILE
 	std::string tile[METATILE][METATILE];
 	static const int header_size = sizeof(struct meta_layout) + (sizeof(struct entry) * (METATILE * METATILE));
-
+#else
+	std::string tile[1][1];
+	static const int header_size = sizeof(struct meta_layout) + (sizeof(struct entry) * (1 * 1));
+#endif
 };
 
 #endif

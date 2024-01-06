@@ -70,7 +70,11 @@ static int file_tile_read(struct storage_backend * store, const char *xmlconfig,
 	char path[PATH_MAX];
 	int meta_offset, fd;
 	unsigned int pos;
+#ifdef METATILE
 	unsigned int header_len = sizeof(struct meta_layout) + METATILE * METATILE * sizeof(struct entry);
+#else
+	unsigned int header_len = sizeof(struct meta_layout) + sizeof(struct entry);
+#endif
 	struct meta_layout *m = (struct meta_layout *)malloc(header_len);
 	size_t file_offset, tile_size;
 
@@ -122,6 +126,8 @@ static int file_tile_read(struct storage_backend * store, const char *xmlconfig,
 		*compressed = 0;
 	}
 
+#ifdef METATILE
+
 	// Currently this code only works with fixed metatile sizes (due to xyz_to_meta above)
 	if (m->count != (METATILE * METATILE)) {
 		snprintf(log_msg, PATH_MAX - 1, "Meta file %s header bad count %d != %d\n", path, m->count, METATILE * METATILE);
@@ -129,6 +135,8 @@ static int file_tile_read(struct storage_backend * store, const char *xmlconfig,
 		close(fd);
 		return -5;
 	}
+
+#endif
 
 	file_offset = m->index[meta_offset].offset;
 	tile_size   = m->index[meta_offset].size;
