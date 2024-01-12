@@ -142,8 +142,8 @@ int main(int argc, char **argv)
 			{"tile-dir",         required_argument, 0, 't'},
 			{"verbose",          no_argument,       0, 'v'},
 
-			{"help",        no_argument,       0, 'h'},
-			{"version",     no_argument,       0, 'V'},
+			{"help",             no_argument,       0, 'h'},
+			{"version",          no_argument,       0, 'V'},
 			{0, 0, 0, 0}
 		};
 
@@ -164,11 +164,12 @@ int main(int argc, char **argv)
 				break;
 
 			case 'k':		/* -k, --keepalives */
-			  keepalives.enabled = 1;
+				keepalives.enabled = 1;
 				break;
 
 			case 'K': {  /* --keepalive-config=<t>:<intvl>:<count> */
 				char * confstr = strdup(optarg);
+
 				if (!strlen(confstr)) {
 					fprintf(stderr, "No parameters provided for the TCP keepalive config\n");
 					return 1;
@@ -178,6 +179,7 @@ int main(int argc, char **argv)
 				const int val_count_expected = 3;
 				char * val[val_count_expected];
 				char * p = strtok(confstr, ":");
+
 				while (p != NULL) {
 					val[ val_count++ ] = p;
 					p = strtok(NULL, ":");
@@ -191,24 +193,27 @@ int main(int argc, char **argv)
 				keepalives.enabled = 1;
 				char * error_char = NULL;
 				keepalives.time = strtol(val[0], &error_char, 10);
+
 				if (*error_char != '\0') {
 					fprintf(stderr, "TCP keepalive time contains invalid character\n");
 					return 1;
 				}
 
 				keepalives.interval = strtol(val[1], &error_char, 10);
+
 				if (*error_char != '\0') {
 					fprintf(stderr, "TCP keepalive interval contains invalid character\n");
 					return 1;
 				}
 
 				keepalives.probes = strtol(val[2], &error_char, 10);
+
 				if (*error_char != '\0') {
 					fprintf(stderr, "TCP keepalive probe count contains invalid character\n");
 					return 1;
 				}
 
-			  break;
+				break;
 			}
 
 			case 't':   /* -t, --tile-dir */

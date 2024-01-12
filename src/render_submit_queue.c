@@ -323,41 +323,46 @@ int make_connection(const char *spath)
 
 			if (keepalives.enabled) {
 				fprintf(stderr, "Enabling TCP keepalives\n");
+
 				if (keepalives.time > 0) {
 					fprintf(stderr, "TCP keepalives configuration: time=%d, interval=%d, probes=%d\n",
 						keepalives.time,
 						keepalives.interval,
 						keepalives.probes
-					);
+					       );
 				}
+
 				int optval = 0;
 				socklen_t optlen = sizeof(optval);
 
 				optval = 1;
+
 				if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval)) < 0) {
-						perror("setsockopt()");
-						close(fd);
-						exit(2);
+					perror("setsockopt()");
+					close(fd);
+					exit(2);
 				}
 
 #ifdef LINUX
+
 				if (keepalives.time > 0 && setsockopt(fd, SOL_SOCKET, TCP_KEEPIDLE, &keepalives.time, sizeof(keepalives.time)) < 0) {
-						perror("setsockopt()");
-						close(fd);
-						exit(2);
+					perror("setsockopt()");
+					close(fd);
+					exit(2);
 				}
 
 				if (keepalives.interval > 0 && setsockopt(fd, SOL_SOCKET, TCP_KEEPINTVL, &keepalives.interval, sizeof(keepalives.interval)) < 0) {
-						perror("setsockopt()");
-						close(fd);
-						exit(2);
+					perror("setsockopt()");
+					close(fd);
+					exit(2);
 				}
 
 				if (keepalives.probes > 0 && setsockopt(fd, SOL_SOCKET, TCP_KEEPCNT, &keepalives.probes, sizeof(keepalives.probes)) < 0) {
-						perror("setsockopt()");
-						close(fd);
-						exit(2);
+					perror("setsockopt()");
+					close(fd);
+					exit(2);
 				}
+
 #endif
 
 			}
