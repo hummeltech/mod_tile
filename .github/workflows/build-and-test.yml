@@ -95,8 +95,11 @@ jobs:
       fail-fast: false
     container:
       env:
+        BUILD_TYPE: Debug
         CC: ${{ matrix.compiler == 'LLVM' && 'clang' || 'gcc' }}
+        CFLAGS: --coverage
         CXX: ${{ matrix.compiler == 'LLVM' && 'clang++' || 'g++' }}
+        CXXFLAGS: --coverage
       image: ${{ matrix.image }}
     steps:
       - name: Checkout code
@@ -111,12 +114,17 @@ jobs:
       - name: Test `mod_tile`
         uses: ./.github/actions/test
 
+      - name: Process & Report `mod_tile` coverage results
+        uses: ./.github/actions/coverage
+
       - name: Install `mod_tile`
         uses: ./.github/actions/install
 
   macOS:
     env:
-      CFLAGS: -Wno-implicit-function-declaration
+      BUILD_TYPE: Debug
+      CFLAGS: --coverage -Wno-implicit-function-declaration
+      CXXFLAGS: --coverage
       LDFLAGS: -undefined dynamic_lookup
       LIBRARY_PATH: /usr/local/lib
       TEST_PARALLEL_LEVEL: 1
@@ -162,6 +170,11 @@ jobs:
       - name: Test `mod_tile`
         uses: ./.github/actions/test
 
+      - name: Process & Report `mod_tile` coverage results
+        uses: ./.github/actions/coverage
+        with:
+          lcov-extra-options: --ignore-errors gcov --ignore-errors inconsistent
+
       - name: Install `mod_tile`
         uses: ./.github/actions/install
 
@@ -169,7 +182,10 @@ jobs:
     continue-on-error: true
     env:
       BUILD_PARALLEL_LEVEL: 2
+      BUILD_TYPE: Debug
+      CFLAGS: --coverage
       CTEST_HOST: localhost
+      CXXFLAGS: --coverage
       LIBRARY_PATH: /usr/local/lib
       TEST_PARALLEL_LEVEL: 2
       TMPDIR: /tmp
@@ -221,6 +237,9 @@ jobs:
 
       - name: Test `mod_tile`
         uses: ./.github/actions/test
+
+      - name: Process & Report `mod_tile` coverage results
+        uses: ./.github/actions/coverage
 
       - name: Install `mod_tile`
         uses: ./.github/actions/install
