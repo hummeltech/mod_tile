@@ -15,28 +15,19 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/un.h>
-#include <poll.h>
-#include <errno.h>
-#include <math.h>
-#include <limits.h>
-#include <string.h>
-#include <strings.h>
-#include <getopt.h>
+#include "config.h"               // for RENDERD_SOCKET, VERSION
+#include "render_config.h"        // for MAX_ZOOM, XMLCONFIG_DEFAULT, MAX
+#include "render_submit_queue.h"  // for enqueue, finish_workers, spawn_workers
 
-#include "gen_tile.h"
-#include "protocol.h"
-#include "config.h"
-#include "render_config.h"
-#include "render_submit_queue.h"
-
+#include <getopt.h>               // for required_argument, getopt_long, no_...
+#include <limits.h>               // for PATH_MAX
+#include <math.h>                 // for round, M_PI, atan, exp, log, sin
+#include <stdio.h>                // for fprintf, stderr, printf, NULL, fflush
+#include <stdlib.h>               // for atoi, exit
+#include <string.h>               // for strdup
+#include <sys/time.h>             // for gettimeofday, timeval
+#include <sys/un.h>               // for sockaddr_un
+#include <unistd.h>               // for optarg, NULL
 
 #define DEG_TO_RAD (M_PI/180)
 #define RAD_TO_DEG (180/M_PI)

@@ -18,44 +18,49 @@
 // https://github.com/catchorg/Catch2/blob/v2.13.9/docs/own-main.md#let-catch2-take-full-control-of-args-and-config
 #define CATCH_CONFIG_RUNNER
 
-#include "catch/catch.hpp"
-#include "config.h"
-#include "g_logger.h"
-#include "gen_tile.h"
-#include "metatile.h"
-#include "protocol_helper.h"
-#include "render_config.h"
-#include "renderd.h"
-#include "request_queue.h"
-#include "store.h"
-#include "string.h"
-#include <cstddef>
-#include <glib.h>
-#include <iostream>
-#include <mapnik/version.hpp>
-#include <sstream>
-#include <stdlib.h>
-#include <string>
-#include <sys/stat.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
-#include <syslog.h>
-#include <time.h>
-#include <unistd.h>
+#include "catch/catch.hpp"            // for operator""_catch_sr, AssertionH...
+#include "config.h"                   // for VERSION, HAVE_LIBMEMCACHED, HAV...
+#include "g_logger.h"                 // for g_logger, g_logger_level_name
+#include "gen_tile.h"                 // for item, render_init
+#include "metatile.h"                 // for metaTile
+#include "protocol.h"                 // for protoCmd, protocol, PROTO_VER
+#include "protocol_helper.h"          // for send_cmd, recv_cmd
+#include "render_config.h"            // for METATILE, REQ_LIMIT, DIRTY_LIMIT
+#include "renderd.h"                  // for rx_request, send_response
+#include "request_queue.h"            // for request_queue_no_requests_queued
+#include "store.h"                    // for stat_info, init_storage_backend
+#include "string.h"                   // for memcmp, strcpy
+
+#include <cstdio>                     // for fileno, fgets, pclose, popen
+#include <glib.h>                     // for G_LOG_LEVEL_DEBUG, G_LOG_LEVEL_...
+#include <iostream>                   // for operator<<, basic_ostream, cout
+#include <limits.h>                   // for PATH_MAX
+#include <mapnik/version.hpp>         // for MAPNIK_MAJOR_VERSION
+#include <math.h>                     // for round
+#include <pthread.h>                  // for pthread_create, pthread_join
+#include <stdint.h>                   // for uint64_t
+#include <stdlib.h>                   // for free, system, malloc, NULL, WEX...
+#include <string>                     // for operator+, basic_string, char_t...
+#include <strings.h>                  // for bzero
+#include <sys/stat.h>                 // for mkdir, time_t
+#include <sys/syscall.h>              // for SYS_gettid
+#include <syslog.h>                   // for openlog, LOG_DAEMON, LOG_PERROR
+#include <time.h>                     // for time, time_t
+#include <tuple>                      // for make_tuple, tie, tuple
+#include <unistd.h>                   // for dup2, pipe, dup, read, write, NULL
+
+#if MAPNIK_MAJOR_VERSION >= 4
+#include <mapnik/geometry/box2d.hpp>  // for box2d
+#else
+#include <mapnik/box2d.hpp>           // for box2d
+#endif
 
 #ifdef __MACH__
 #include <mach/clock.h>
 #include <mach/mach.h>
 #endif
 #ifdef __FreeBSD__
-#include <pthread.h>
 #include <sys/wait.h>
-#endif
-
-#if MAPNIK_MAJOR_VERSION >= 4
-#include <mapnik/geometry/box2d.hpp>
-#else
-#include <mapnik/box2d.hpp>
 #endif
 
 #define NO_QUEUE_REQUESTS 9

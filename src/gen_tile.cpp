@@ -15,52 +15,55 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include <mapnik/version.hpp>
-#include <mapnik/map.hpp>
-#include <mapnik/layer.hpp>
-#include <mapnik/datasource.hpp>
-#include <mapnik/feature_type_style.hpp>
-#include <mapnik/datasource_cache.hpp>
-#include <mapnik/agg_renderer.hpp>
-#include <mapnik/load_map.hpp>
-#include <mapnik/image_util.hpp>
-
-#include <exception>
-#include <iostream>
-#include <fstream>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <string>
-#include <stdlib.h>
-
-#include "gen_tile.h"
-#include "render_config.h"
-#include "renderd.h"
-#include "store.h"
-#include "metatile.h"
-#include "protocol.h"
-#include "request_queue.h"
-#include "cache_expire.h"
-#include "parameterize_style.hpp"
-#include "g_logger.h"
-
-#ifdef HTCP_EXPIRE_CACHE
-#include <sys/socket.h>
-#include <netdb.h>
-#endif
-
 #define image_data_32 image_rgba8
 #define image_32 image_rgba8
-#include <mapnik/image.hpp>
-#include <mapnik/image_view_any.hpp>
+
+#include "cache_expire.h"               // for HTCP_EXPIRE_CACHE, init_cache...
+#include "g_logger.h"                   // for g_logger
+#include "gen_tile.h"                   // for item, render_init, render_thread
+#include "metatile.h"                   // for metaTile
+#include "parameterize_style.hpp"       // for init_parameterization_function
+#include "protocol.h"                   // for protocol, protoCmd, XMLCONFIG...
+#include "render_config.h"              // for METATILE, XMLCONFIGS_MAX
+#include "renderd.h"                    // for request_exit, send_response
+#include "request_queue.h"              // for request_queue_fetch_request
+#include "store.h"                      // for init_storage_backend, stat_info
+
+#include <dirent.h>                     // for closedir, dirent, opendir
+#include <exception>                    // for exception
+#include <font_engine_freetype.hpp>     // for freetype_engine
+#include <glib.h>                       // for G_LOG_LEVEL_DEBUG, G_LOG_LEVE...
+#include <global.hpp>                   // for mapnik
+#include <image_view.hpp>               // for image_view
+#include <limits.h>                     // for PATH_MAX
+#include <map>                          // for operator==, map
+#include <mapnik/agg_renderer.hpp>      // for agg_renderer
+#include <mapnik/datasource.hpp>        // for datasource
+#include <mapnik/datasource_cache.hpp>  // for datasource_cache
+#include <mapnik/image.hpp>             // for image, image_rgba8
+#include <mapnik/image_util.hpp>        // for save_to_string
+#include <mapnik/image_view_any.hpp>    // for image_view_any
+#include <mapnik/layer.hpp>             // for layer
+#include <mapnik/load_map.hpp>          // for load_map
+#include <mapnik/map.hpp>               // for Map
+#include <mapnik/version.hpp>           // for MAPNIK_MAJOR_VERSION, MAPNIK_...
+#include <math.h>                       // for M_PI
+#include <memory>                       // for __shared_ptr_access
+#include <params.hpp>                   // for parameters, value_holder
+#include <pixel_types.hpp>              // for rgba8_t
+#include <pthread.h>                    // for pthread_self
+#include <stdio.h>                      // for snprintf
+#include <stdlib.h>                     // for malloc, free
+#include <string.h>                     // for strcmp, strcpy, strlen, strrchr
+#include <string>                       // for string
+#include <sys/stat.h>                   // for stat, S_ISDIR
+#include <sys/time.h>                   // for gettimeofday, timeval
+#include <unistd.h>                     // for sleep, NULL
+
 #if MAPNIK_MAJOR_VERSION >= 4
-#include <mapnik/geometry/box2d.hpp>
+#include <mapnik/geometry/box2d.hpp>    // for box2d
 #else
-#include <mapnik/box2d.hpp>
+#include <mapnik/box2d.hpp>             // for box2d
 #endif
 
 

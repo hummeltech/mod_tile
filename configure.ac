@@ -15,6 +15,9 @@ AC_CONFIG_SRCDIR([src/mod_tile.c])
 AC_CONFIG_HEADERS([includes/config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
+# Define mod_tile defaults
+AC_DEFINE([RENDERD_SOCKET], ["/run/renderd/renderd.sock"], [The default path of renderd.sock])
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC

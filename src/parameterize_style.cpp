@@ -15,18 +15,21 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include <mapnik/version.hpp>
-#include <mapnik/map.hpp>
-#include <mapnik/layer.hpp>
-#include <mapnik/params.hpp>
-#include <mapnik/datasource.hpp>
-#include <mapnik/datasource_cache.hpp>
+#include "g_logger.h"                   // for g_logger
+#include "parameterize_style.hpp"       // for init_parameterization_function
 
-#include <boost/optional.hpp>
-
-#include "parameterize_style.hpp"
-#include "g_logger.h"
-
+#include <boost/optional/optional.hpp>  // for optional
+#include <glib.h>                       // for G_LOG_LEVEL_DEBUG, G_LOG_LEVE...
+#include <map>                          // for operator!=, map
+#include <mapnik/datasource.hpp>        // for datasource
+#include <mapnik/datasource_cache.hpp>  // for datasource_cache
+#include <mapnik/layer.hpp>             // for layer
+#include <mapnik/map.hpp>               // for Map
+#include <mapnik/params.hpp>            // for parameters, value_holder
+#include <memory>                       // for __shared_ptr_access
+#include <stdlib.h>                     // for free
+#include <string.h>                     // for strncat, strcmp, strtok, NULL
+#include <string>                       // for basic_string, string
 
 static void parameterize_map_language(mapnik::Map &m, char * parameter)
 {

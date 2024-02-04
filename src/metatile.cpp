@@ -15,19 +15,18 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include "config.h"
+#include "cache_expire.h"   // for cache_expire
+#include "g_logger.h"       // for g_logger
+#include "metatile.h"       // for metaTile, entry, meta_layout, META_MAGIC
+#include "render_config.h"  // for METATILE
+#include "store.h"          // for storage_backend
 
-#include <string.h>
-#include <limits.h>
-#include <stdlib.h>
-
-#include "render_config.h"
-#include "metatile.h"
-#include "store.h"
-#include "cache_expire.h"
-#include "request_queue.h"
-#include "g_logger.h"
-
+#include <glib.h>           // for G_LOG_LEVEL_WARNING, MIN, G_LOG_LEVEL_INFO
+#include <limits.h>         // for PATH_MAX
+#include <stdlib.h>         // for free, malloc
+#include <string.h>         // for memcpy, memset, strlen
+#include <string>           // for string
+#include <sys/types.h>      // for ssize_t
 
 metaTile::metaTile(const std::string &xmlconfig, const std::string &options, int x, int y, int z):
 	x_(x), y_(y), z_(z), xmlconfig_(xmlconfig), options_(options)

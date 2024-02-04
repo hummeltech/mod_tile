@@ -34,10 +34,9 @@ extern "C" {
  * A client may not bother waiting for a response if the render daemon is too slow
  * causing responses to get slightly out of step with requests.
  */
-#define TILE_PATH_MAX (256)
-#define PROTO_VER (3)
-#ifndef RENDERD_SOCKET
-#define RENDERD_SOCKET "/run/renderd/renderd.sock"
+
+#ifndef PROTO_VER
+#define PROTO_VER 3
 #endif
 #ifndef RENDERD_HOST
 #define RENDERD_HOST "localhost"
@@ -45,7 +44,15 @@ extern "C" {
 #ifndef RENDERD_PORT
 #define RENDERD_PORT 7654
 #endif
+#ifndef RENDERD_SOCKET
+#define RENDERD_SOCKET "/run/renderd/renderd.sock"
+#endif
+#ifndef TILE_PATH_MAX
+#define TILE_PATH_MAX 256
+#endif
+#ifndef XMLCONFIG_MAX
 #define XMLCONFIG_MAX 41
+#endif
 
 enum protoCmd { cmdIgnore, cmdRender, cmdDirty, cmdDone, cmdNotDone, cmdRenderPrio, cmdRenderBulk, cmdRenderLow };
 
