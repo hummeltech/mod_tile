@@ -1,3 +1,5 @@
+.. figure:: https://codecov.io/gh/openstreetmap/mod_tile/branch/master/graph/badge.svg
+
 ====================
 mod_tile and renderd
 ====================
