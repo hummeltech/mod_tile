@@ -155,9 +155,6 @@ jobs:
           - ${{ contains(github.ref, 'master') || contains(github.ref, 'develop') || contains(github.ref, 'CI') }}
         include:
           - os: macos-13
-            build_system: Autotools
-            compiler: LLVM
-          - os: macos-13
             build_system: CMake
             compiler: LLVM
         exclude:
@@ -249,6 +246,7 @@ jobs:
 
       - name: Process & Report `mod_tile` coverage results
         uses: ./.github/actions/coverage
+        if: matrix.build_system == 'CMake'
 
       - name: Install `mod_tile`
         uses: ./.github/actions/install
