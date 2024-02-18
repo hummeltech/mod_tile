@@ -78,6 +78,60 @@ inputs:
       libmemcached
       mapnik
       pkg-config
+  macos-build-subdependencies:
+    default: >-
+      abseil
+      apache-arrow
+      aws-sdk-cpp
+      boost
+      bzip2
+      cfitsio
+      epsilon
+      expat
+      freexl
+      gdal
+      geos
+      gflags
+      glog
+      gpgme
+      grpc
+      hdf5
+      json-c
+      jsoncpp
+      libaec
+      libarchive
+      libb2
+      libde265
+      libgeotiff
+      libheif
+      libkml
+      liblerc
+      librttopo
+      libspatialite
+      libxml2
+      llvm
+      minizip
+      netcdf
+      nspr
+      nss
+      numpy
+      openblas
+      openjpeg
+      poppler
+      popt
+      proj
+      protobuf
+      qhull
+      rapidjson
+      re2
+      shared-mime-info
+      snappy
+      thrift
+      uriparser
+      utf8proc
+      x265
+      xerces-c
+      z3
   macos-test-dependencies:
     default: >-
       coreutils
@@ -253,6 +307,7 @@ runs:
       with:
         packages: >-
           ${{ inputs.macos-build-dependencies }}
+          ${{ inputs.macos-build-subdependencies }}
           ${{ inputs.macos-test-dependencies }}
           ${{ matrix.build_system == 'CMake' && 'cmake' || 'autoconf automake' }}
           ${{ matrix.compiler == 'GNU' && 'gcc' || '' }}
