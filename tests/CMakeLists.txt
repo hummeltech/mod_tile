@@ -652,9 +652,9 @@ foreach(STORAGE_BACKEND_INDEX RANGE ${STORAGE_BACKENDS_LENGTH})
     set(DIRTY_ON_URL "${HTTPD0_URL}/dirty")
     set(STATUS_OFF_URL "${HTTPD1_URL}/status")
     set(STATUS_ON_URL "${HTTPD0_URL}/status")
+
     # Increment count for stats (only counted by requests to HTTPD0_URL, HTTPD1_URL has stats disabled)
     math(EXPR STATS_COUNTER "${STATS_COUNTER} + 1")
-
     add_good_tile_download_test(
       ${MAP_NAME}_${STORAGE_BACKEND}_0
       ${HTTPD0_URL}
@@ -716,6 +716,32 @@ foreach(STORAGE_BACKEND_INDEX RANGE ${STORAGE_BACKENDS_LENGTH})
       FIXTURES_REQUIRED "services_started_${STORAGE_BACKEND};tiles_downloaded_${STORAGE_BACKEND}"
       TIMEOUT 20
     )
+
+    # Increment count for stats (only counted by requests to HTTPD0_URL, HTTPD1_URL has stats disabled)
+    math(EXPR STATS_COUNTER "${STATS_COUNTER} + 1")
+    add_test(
+      NAME last_modified_${MAP_NAME}_${STORAGE_BACKEND}
+      COMMAND ${BASH} -c "
+        echo 'Fetching \"Last-Modified\" header from \"${HTTPD0_URL}\"';
+        LAST_MODIFIED_0=\$(${CURL_CMD} --head ${HTTPD0_URL} | ${GREP_EXECUTABLE} 'Last-Modified:')
+        echo \"Found: \${LAST_MODIFIED_0}\"
+        echo 'Sleeping 2s'
+        sleep 2
+        echo 'Fetching \"Last-Modified\" header from \"${HTTPD1_URL}\"';
+        LAST_MODIFIED_1=\$(${CURL_CMD} --head ${HTTPD1_URL} | ${GREP_EXECUTABLE} 'Last-Modified:')
+        echo \"Found: \${LAST_MODIFIED_0}\"
+        if [ \"\${LAST_MODIFIED_0}\" != \"\${LAST_MODIFIED_1}\" ]; then
+          exit 1;
+        fi
+      "
+      WORKING_DIRECTORY tests
+    )
+    set_tests_properties(last_modified_${MAP_NAME}_${STORAGE_BACKEND} PROPERTIES
+      FIXTURES_REQUIRED services_started_${STORAGE_BACKEND}
+      FIXTURES_SETUP tiles_downloaded_${STORAGE_BACKEND}
+      TIMEOUT 10
+    )
+
     add_test(NAME stats_urls_${MAP_NAME}_${STORAGE_BACKEND}
       COMMAND ${BASH} -c "
         METRICS_ON_CMD=\"${CURL_CMD} ${METRICS_ON_URL}\"
