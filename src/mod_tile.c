@@ -1591,9 +1591,7 @@ static int tile_handler_serve(request_rec *r)
 		}
 
 #if 0
-		// Set default Last-Modified and Etag headers
-		ap_update_mtime(r, r->finfo.mtime);
-		ap_set_last_modified(r);
+		// Set ETag header
 		ap_set_etag(r);
 #else
 		// Use MD5 hash as only cache attribute.
@@ -1606,6 +1604,10 @@ static int tile_handler_serve(request_rec *r)
 		ap_set_content_type(r, tile_configs[rdata->layerNumber].mimeType);
 		ap_set_content_length(r, len);
 		add_expiry(r, cmd);
+
+		// Set Last-Modified header
+		ap_update_mtime(r, r->finfo.mtime);
+		ap_set_last_modified(r);
 
 		gettimeofday(&end, NULL);
 		incTimingCounter((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec), cmd->z, r);
