@@ -119,7 +119,7 @@ void free_map_section(xmlconfigitem map_section)
 	free((void *)map_section.xmlfile);
 	free((void *)map_section.xmlname);
 	free((void *)map_section.xmluri);
-	bzero(&map_section, sizeof(xmlconfigitem));
+	memset(&map_section, 0, sizeof(xmlconfigitem));
 }
 
 void free_map_sections(xmlconfigitem *map_sections)
@@ -141,7 +141,7 @@ void free_renderd_section(renderd_config renderd_section)
 	free((void *)renderd_section.socketname);
 	free((void *)renderd_section.stats_filename);
 	free((void *)renderd_section.tile_dir);
-	bzero(&renderd_section, sizeof(renderd_config));
+	memset(&renderd_section, 0, sizeof(renderd_config));
 }
 
 void free_renderd_sections(renderd_config *renderd_sections)
@@ -203,7 +203,7 @@ void process_map_sections(const char *config_file_name, xmlconfigitem *maps_dest
 		exit(1);
 	}
 
-	bzero(maps_dest, sizeof(xmlconfigitem) * XMLCONFIGS_MAX);
+	memset(maps_dest, 0, sizeof(xmlconfigitem) * XMLCONFIGS_MAX);
 
 	g_logger(G_LOG_LEVEL_DEBUG, "Parsing map config section(s)");
 
@@ -369,7 +369,7 @@ void process_renderd_sections(const char *config_file_name, renderd_config *conf
 		exit(1);
 	}
 
-	bzero(configs_dest, sizeof(renderd_config) * MAX_SLAVES);
+	memset(configs_dest, 0, sizeof(renderd_config) * MAX_SLAVES);
 
 	g_logger(G_LOG_LEVEL_DEBUG, "Parsing renderd config section(s)");
 

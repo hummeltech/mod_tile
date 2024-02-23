@@ -464,7 +464,7 @@ int client_socket_init(renderd_config * sConfig)
 			return FD_INVALID;
 		}
 
-		bzero(addrU, sizeof(struct sockaddr_un));
+		memset(addrU, 0, sizeof(struct sockaddr_un));
 		addrU->sun_family = AF_UNIX;
 		strncpy(addrU->sun_path, sConfig->socketname, sizeof(addrU->sun_path) - 1);
 
@@ -501,7 +501,7 @@ int server_socket_init(renderd_config *sConfig)
 			exit(2);
 		}
 
-		bzero(&addrI, sizeof(addrI));
+		memset(&addrI, 0, sizeof(struct sockaddr_in6));
 		addrI.sin6_family = AF_INET6;
 		addrI.sin6_addr = in6addr_any;
 		addrI.sin6_port = htons(sConfig->ipport);
@@ -523,7 +523,7 @@ int server_socket_init(renderd_config *sConfig)
 			exit(2);
 		}
 
-		bzero(&addrU, sizeof(addrU));
+		memset(&addrU, 0, sizeof(struct sockaddr_un));
 		addrU.sun_family = AF_UNIX;
 		strncpy(addrU.sun_path, sConfig->socketname, sizeof(addrU.sun_path) - 1);
 
