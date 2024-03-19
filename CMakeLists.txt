@@ -146,6 +146,20 @@ set(TILE_LOAD_DIRECTORY "${HTTPD_SYSCONFDIR}")
 set(TILE_LOAD_FILENAME "tile.load")
 set(VERSION "${PROJECT_VERSION}")
 
+# Ensure macro paths are absolute
+if(NOT RENDERD_CONFIG MATCHES "^/")
+  set(RENDERD_CONFIG "/${RENDERD_CONFIG}")
+endif()
+if(NOT RENDERD_PIDFILE MATCHES "^/")
+  set(RENDERD_PIDFILE "/${RENDERD_PIDFILE}")
+endif()
+if(NOT RENDERD_SOCKET MATCHES "^/")
+  set(RENDERD_SOCKET "/${RENDERD_SOCKET}")
+endif()
+if(NOT RENDERD_TILE_DIR MATCHES "^/")
+  set(RENDERD_TILE_DIR "/${RENDERD_TILE_DIR}")
+endif()
+
 #-----------------------------------------------------------------------------
 #
 #  Configure
