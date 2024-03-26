@@ -226,6 +226,11 @@ void process_map_sections(const char *config_file_name, xmlconfigitem *maps_dest
 				exit(7);
 			}
 
+			if (maps_dest[map_section_num].xmlname != NULL) {
+				g_logger(G_LOG_LEVEL_CRITICAL, "Duplicate map config section names for section %i: %s & %s", map_section_num, maps_dest[map_section_num].xmlname, section);
+				exit(7);
+			}
+
 			copy_string(section, &maps_dest[map_section_num].xmlname, XMLCONFIG_MAX);
 
 			process_config_int(ini, section, "aspectx", &maps_dest[map_section_num].aspect_x, 1);
