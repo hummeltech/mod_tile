@@ -36,10 +36,8 @@ WORKDIR /tmp/mod_tile_build
 RUN export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc) && \
     cmake -B . -S /tmp/mod_tile_src \
         -DCMAKE_BUILD_TYPE:STRING=Release \
-        -DCMAKE_INSTALL_LOCALSTATEDIR:PATH=/var \
-        -DCMAKE_INSTALL_PREFIX:PATH=/usr \
-        -DCMAKE_INSTALL_RUNSTATEDIR:PATH=/run \
-        -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
+        -DCMAKE_INSTALL_PREFIX:PATH=/ \
+        -DCMAKE_INSTALL_RUNSTATEDIR:PATH=run \
         -DENABLE_TESTS:BOOL=ON && \
     cmake --build .
 RUN export CTEST_PARALLEL_LEVEL=$(nproc) && \

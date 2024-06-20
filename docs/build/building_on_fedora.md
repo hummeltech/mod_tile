@@ -39,10 +39,8 @@ git clone --depth 1 https://github.com/openstreetmap/mod_tile.git .
 cd /tmp/mod_tile_build
 cmake -B . -S /tmp/mod_tile_src \
   -DCMAKE_BUILD_TYPE:STRING=Release \
-  -DCMAKE_INSTALL_LOCALSTATEDIR:PATH=/var \
-  -DCMAKE_INSTALL_PREFIX:PATH=/usr \
-  -DCMAKE_INSTALL_RUNSTATEDIR:PATH=/run \
-  -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
+  -DCMAKE_INSTALL_PREFIX:PATH=/ \
+  -DCMAKE_INSTALL_RUNSTATEDIR:PATH=run \
   -DENABLE_TESTS:BOOL=ON
 cmake --build .
 ctest
