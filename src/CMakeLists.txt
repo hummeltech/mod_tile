@@ -192,6 +192,46 @@ set(renderd_LIBS
 add_executable(renderd ${renderd_SRCS})
 target_link_libraries(renderd ${renderd_LIBS})
 
+#-----------------------------------------------------------------------------
+#
+#  test_metatile
+#
+#-----------------------------------------------------------------------------
+
+find_package(ImageMagick COMPONENTS Magick++ MagickCore)
+if(ImageMagick_FOUND)
+  if(ImageMagick_VERSION_STRING VERSION_GREATER_EQUAL 7)
+    set(IMAGEMAGICK_VERSION 7)
+  elseif(ImageMagick_VERSION_STRING VERSION_GREATER_EQUAL 6)
+    set(IMAGEMAGICK_VERSION 6)
+  endif()
+
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.26)
+    set(IMAGEMAGICK_LIBRARIES ImageMagick::Magick++ ImageMagick::MagickCore)
+  else()
+    set(IMAGEMAGICK_LIBRARIES ${ImageMagick_LIBRARIES})
+  endif()
+
+  set(test_metatile_SRCS
+    ${COMMON_SRCS}
+    ${STORE_SRCS}
+    cache_expire.c
+    metatile.cpp
+    renderd_config.c
+    test_metatile.cpp
+  )
+  set(test_metatile_LIBS
+    ${COMMON_LIBRARIES}
+    ${IMAGEMAGICK_LIBRARIES}
+    ${INIPARSER_LIBRARIES}
+    ${STORE_LIBRARIES}
+  )
+  add_executable(test_metatile ${test_metatile_SRCS})
+  target_compile_definitions(test_metatile PRIVATE IMAGEMAGICK_VERSION=${IMAGEMAGICK_VERSION})
+  target_include_directories(test_metatile PRIVATE ${ImageMagick_INCLUDE_DIRS})
+  target_link_libraries(test_metatile PRIVATE ${test_metatile_LIBS})
+endif()
+
 if(ENABLE_TESTS)
 #-----------------------------------------------------------------------------
 #
