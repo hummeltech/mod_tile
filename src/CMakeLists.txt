@@ -192,6 +192,32 @@ set(renderd_LIBS
 add_executable(renderd ${renderd_SRCS})
 target_link_libraries(renderd ${renderd_LIBS})
 
+#-----------------------------------------------------------------------------
+#
+#  test_metatile
+#
+#-----------------------------------------------------------------------------
+
+find_package(ImageMagick COMPONENTS Magick++ MagickCore)
+
+set(test_metatile_SRCS
+  ${COMMON_SRCS}
+  ${STORE_SRCS}
+  cache_expire.c
+  metatile.cpp
+  renderd_config.c
+  test_metatile.cpp
+)
+set(test_metatile_LIBS
+  ${COMMON_LIBRARIES}
+  ${INIPARSER_LIBRARIES}
+  ${STORE_LIBRARIES}
+  ImageMagick::Magick++
+  ImageMagick::MagickCore
+)
+add_executable(test_metatile ${test_metatile_SRCS})
+target_link_libraries(test_metatile ${test_metatile_LIBS})
+
 if(ENABLE_TESTS)
 #-----------------------------------------------------------------------------
 #
