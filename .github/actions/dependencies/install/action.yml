@@ -33,6 +33,10 @@ inputs:
       jq
       lcov
       memcached
+      imagemagick
+      libmagick++-dev
+      libmagickcore-dev
+      libmagickwand-dev
   fedora-build-dependencies:
     default: >-
       cairo-devel
@@ -51,6 +55,7 @@ inputs:
       lcov
       memcached
       procps
+      ImageMagick-c++-devel
   freebsd-build-dependencies:
     default: >-
       apache24
@@ -67,6 +72,7 @@ inputs:
       jq
       lcov
       memcached
+      ImageMagick7
   macos-build-dependencies:
     default: >-
       apr
@@ -84,6 +90,7 @@ inputs:
       jq
       lcov
       memcached
+      imagemagick
   opensuse-build-dependencies:
     default: >-
       apache2-devel
@@ -102,6 +109,7 @@ inputs:
       jq
       lcov
       memcached
+      ImageMagick-devel
   opensuse-mapnik-build-dependencies:
     default: >-
       cmake
@@ -136,6 +144,7 @@ inputs:
       lcov
       memcached
       procps
+      ImageMagick-c++-devel
   rhel-mapnik-build-dependencies:
     default: >-
       boost-devel
@@ -187,6 +196,10 @@ inputs:
       jq
       lcov
       memcached
+      imagemagick
+      libmagick++-dev
+      libmagickcore-dev
+      libmagickwand-dev
   mapnik-build-version-centos-stream:
     default: 4.0.0
   mapnik-build-version-opensuse:
