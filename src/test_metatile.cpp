@@ -12,31 +12,25 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <getopt.h>
-#include <limits.h>
+#include <iostream>
+#include <limits>
 #include <string>
-#include <sys/stat.h>
 
 #include "g_logger.h"
 #include "metatile.h"
 #include "render_config.h"
 #include "renderd_config.h"
-#include "request_queue.h"
-// #include "store.h"
-#include "store_file_utils.h"
 
-using namespace std;
 using namespace Magick;
+using namespace std::filesystem;
 
-struct request_queue *render_request_queue;
-
-struct meta_layout *read_metatile_layout(char metatile_path[PATH_MAX])
+struct meta_layout *read_metatile_layout(path metatile_path, std::ifstream &metatile_file)
 {
 	unsigned int header_len = sizeof(struct meta_layout) + METATILE * METATILE * sizeof(struct entry);
 	unsigned int header_pos = 0;
-
-	ifstream metatile_file(metatile_path, ifstream::binary);
 	struct meta_layout *metatile_layout = reinterpret_cast<struct meta_layout *>(malloc(header_len));
 
 	while (header_pos < header_len) {
@@ -44,10 +38,10 @@ struct meta_layout *read_metatile_layout(char metatile_path[PATH_MAX])
 		metatile_file.read(reinterpret_cast<char *>(metatile_layout + header_pos), len);
 
 		if (metatile_file.gcount() < 0) {
-			g_logger(G_LOG_LEVEL_CRITICAL, "Failed to read complete header for metatile %s Reason: %s\n", metatile_path, strerror(errno));
+			g_logger(G_LOG_LEVEL_CRITICAL, "Failed to read complete header for metatile %s", metatile_path.c_str());
 			metatile_file.close();
 			free(metatile_layout);
-			exit(-2);
+			exit(1);
 		} else if (metatile_file.gcount() > 0) {
 			header_pos += metatile_file.gcount();
 		} else {
@@ -55,21 +49,65 @@ struct meta_layout *read_metatile_layout(char metatile_path[PATH_MAX])
 		}
 	}
 
-	metatile_file.close();
-
 	return metatile_layout;
 }
 
-string read_metatile_tile(char metatile_path[PATH_MAX], uint32_t metatile_offset, struct meta_layout *metatile_layout)
+Image read_metatile_tile(path metatile_path, std::ifstream &metatile_file, struct meta_layout *metatile_layout, uint32_t metatile_offset)
 {
-	ifstream metatile_file(metatile_path, ifstream::binary);
 	char tile[metatile_layout->index[metatile_offset].size];
-
 	metatile_file.seekg(metatile_layout->index[metatile_offset].offset);
 	metatile_file.read(tile, metatile_layout->index[metatile_offset].size);
-	metatile_file.close();
 
-	return string(tile, metatile_layout->index[metatile_offset].size);
+	if (metatile_file.gcount() != metatile_layout->index[metatile_offset].size) {
+		g_logger(G_LOG_LEVEL_CRITICAL, "Failed to read expected bytes from metatile %s", metatile_path.c_str());
+		metatile_file.close();
+		free(metatile_layout);
+		exit(1);
+	}
+
+	Blob blob(tile, metatile_layout->index[metatile_offset].size);
+	return Image(blob);
+}
+
+Image read_metatile_tiles(path metatile_path, std::ifstream &metatile_file, struct meta_layout *metatile_layout)
+{
+	std::list<Image> imageCols;
+
+	for (int x = 0; x < METATILE; x ++) {
+		std::list<Image> imagesCol;
+
+		for (int y = 0; y < METATILE; y ++) {
+			int metatile_offset = x * METATILE + y;
+
+			if (metatile_layout->index[metatile_offset].size == 0) {
+				continue;
+			}
+
+			Image tile = read_metatile_tile(metatile_path, metatile_file, metatile_layout, metatile_offset);
+			imagesCol.push_back(tile);
+		}
+
+		Image imageCol;
+		appendImages(&imageCol, imagesCol.begin(), imagesCol.end(), true);
+		imageCols.push_back(imageCol);
+	}
+
+	Image image;
+	appendImages(&image, imageCols.begin(), imageCols.end());
+	return image;
+}
+
+int count_metatile_tiles(struct meta_layout *metatile_layout)
+{
+	int metatile_tile_count = 0;
+
+	for (int metatile_offset = 0; metatile_offset < metatile_layout->count; metatile_offset ++) {
+		if (metatile_layout->index[metatile_offset].size > 0) {
+			metatile_tile_count ++;
+		}
+	}
+
+	return metatile_tile_count;
 }
 
 int main(int argc, char **argv)
@@ -93,8 +131,8 @@ int main(int argc, char **argv)
 	int tile_dir_passed = 0;
 
 	int verbose = 0;
-	int write = 0;
-	// const struct storage_backend *store;
+	int display = 0;
+	path tile_dir_path;
 
 	foreground = 1;
 
@@ -102,12 +140,12 @@ int main(int argc, char **argv)
 		int option_index = 0;
 		static struct option long_options[] = {
 			{"config",      required_argument, 0, 'c'},
+			{"display",     no_argument,       0, 'D'},
 			{"map",         required_argument, 0, 'm'},
 			{"max-zoom",    required_argument, 0, 'Z'},
 			{"min-zoom",    required_argument, 0, 'z'},
 			{"tile-dir",    required_argument, 0, 't'},
 			{"verbose",     no_argument,       0, 'v'},
-			{"write",       no_argument,       0, 'w'},
 
 			{"help",        no_argument,       0, 'h'},
 			{"version",     no_argument,       0, 'V'},
@@ -125,13 +163,15 @@ int main(int argc, char **argv)
 				config_file_name = strndup(optarg, PATH_MAX);
 				config_file_name_passed = 1;
 
-				struct stat buffer;
-
-				if (stat(config_file_name, &buffer) != 0) {
+				if (!exists(config_file_name)) {
 					g_logger(G_LOG_LEVEL_CRITICAL, "Config file '%s' does not exist, please specify a valid file", config_file_name);
 					return 1;
 				}
 
+				break;
+
+			case 'D': /* -D, --display */
+				display = 1;
 				break;
 
 			case 'm': /* -m, --map */
@@ -156,10 +196,6 @@ int main(int argc, char **argv)
 
 			case 'v': /* -v, --verbose */
 				verbose = 1;
-				break;
-
-			case 'w': /* -v, --write */
-				write = 1;
 				break;
 
 			case 'h': /* -h, --help */
@@ -227,6 +263,15 @@ int main(int argc, char **argv)
 	// 	return 1;
 	// }
 
+	tile_dir_path = path(tile_dir) / mapname;
+
+	if (exists(tile_dir_path)) {
+		current_path(tile_dir_path);
+	} else {
+		g_logger(G_LOG_LEVEL_CRITICAL, "Tile directory '%s' does not exist", tile_dir);
+		return 1;
+	}
+
 	g_logger(G_LOG_LEVEL_INFO, "Started test_metatile with the following options:");
 
 	if (config_file_name_passed) {
@@ -240,81 +285,59 @@ int main(int argc, char **argv)
 
 	for (long z = min_zoom; z <= max_zoom; z++) {
 		int metatile_size = pow(METATILE, 2);
-		long tiles = pow(pow(2, z), 2);
-		long metatiles = tiles / metatile_size;
-		int max_x = sqrt(tiles);
-		int max_y = sqrt(tiles);
+		long found_tiles = 0;
+		long found_metatiles = 0;
+		long total_tiles = pow(pow(2, z), 2);
+		long total_metatiles = total_tiles / metatile_size;
+		int max_x = sqrt(total_tiles);
+		int max_y = sqrt(total_tiles);
+
+		if (total_metatiles <= 1) {
+			total_metatiles = 1;
+		}
 
 		g_logger(G_LOG_LEVEL_MESSAGE, "Zoom Level: %i", z);
-		g_logger(G_LOG_LEVEL_MESSAGE, "\tTiles: %i", tiles);
+		g_logger(G_LOG_LEVEL_MESSAGE, "\tTotal Metatiles: %ld", total_metatiles);
+		g_logger(G_LOG_LEVEL_MESSAGE, "\tTotal Tiles: %ld", total_tiles);
 
-		if (metatiles <= 1) {
-			metatiles = 1;
-		}
+		if (exists(path(std::to_string(z)))) {
+			for (const directory_entry& dir_entry : recursive_directory_iterator(std::to_string(z))) {
+				if (dir_entry.is_regular_file()) {
+					std::ifstream metatile_file(dir_entry.path(), std::ifstream::binary);
+					struct meta_layout *metatile_layout = read_metatile_layout(dir_entry, metatile_file);
+					struct entry metatile_layout_entry = metatile_layout->index[metatile_size - 1];
+					int expected_file_size = metatile_layout_entry.offset + metatile_layout_entry.size;
 
-		g_logger(G_LOG_LEVEL_MESSAGE, "\tMetatiles: %i", metatiles);
-
-		list<Image> imageCols;
-
-		for (int x = 0; x < max_x; x++) {
-			list<Image> imagesCol;
-
-			for (int y = 0; y < max_y; y++) {
-				char metatile_path[PATH_MAX];
-				uint32_t metatile_offset = xyz_to_meta(metatile_path, sizeof(metatile_path), tile_dir, mapname, x, y, z);
-				struct stat buffer;
-
-				if (verbose) {
-					g_logger(G_LOG_LEVEL_MESSAGE, "\tTile '%i/%i/%i' is located in '%s' (offset number %i)", z, x, y, metatile_path, metatile_offset);
-				}
-
-				if (stat(metatile_path, &buffer) != 0) {
 					if (verbose) {
-						g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile for '%i/%i/%i' does not exist: %s", z, x, y, metatile_path);
+						g_logger(G_LOG_LEVEL_MESSAGE, "\tMetatile path: '%s'", dir_entry.path().c_str());
+						g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Magic: %.4s", metatile_layout->magic);
+						g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Tile Count: %i", metatile_layout->count);
+						g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Min Tile X: %i", metatile_layout->x);
+						g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Min Tile Y: %i", metatile_layout->y);
+						g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Min Tile Z: %i", metatile_layout->z);
 					}
 
-					continue;
+					if (dir_entry.file_size() == expected_file_size) {
+						if (verbose) {
+							g_logger(G_LOG_LEVEL_MESSAGE, "\tMetatile size is correct: %i Bytes", dir_entry.file_size());
+						}
+
+						found_metatiles ++;
+						found_tiles += count_metatile_tiles(metatile_layout);
+					} else {
+						g_logger(G_LOG_LEVEL_WARNING, "\tMetatile size is incorrect: %i Bytes (%i Bytes expected)", dir_entry.file_size(), expected_file_size);
+					}
+
+					if (display) {
+						read_metatile_tiles(dir_entry, metatile_file, metatile_layout).display();
+					}
+
+					metatile_file.close();
 				}
-
-				struct meta_layout *metatile_layout = read_metatile_layout(metatile_path);
-
-				if (verbose) {
-					g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Magic: %.4s", metatile_layout->magic);
-					g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Tile Count: %i", metatile_layout->count);
-					g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Min Tile X: %i", metatile_layout->x);
-					g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Min Tile Y: %i", metatile_layout->y);
-					g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Min Tile Z: %i", metatile_layout->z);
-					g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Tile Byte Offset: %i", metatile_layout->index[metatile_offset].offset);
-					g_logger(G_LOG_LEVEL_MESSAGE, "\t\tMetatile Tile Byte Size: %i", metatile_layout->index[metatile_offset].size);
-				}
-
-				string tile = read_metatile_tile(metatile_path, metatile_offset, metatile_layout);
-
-				if (write) {
-					Blob blob(tile.c_str(), tile.length());
-					Image imageCell(blob);
-					imagesCol.push_back(imageCell);
-				}
-			}
-
-			if (imagesCol.size() == max_y && write) {
-				Image imageCol;
-				appendImages(&imageCol, imagesCol.begin(), imagesCol.end(), true);
-				imageCols.push_back(imageCol);
 			}
 		}
 
-		if (imageCols.size() == max_x && write) {
-			Image image;
-			string megatile_path((string)P_tmpdir + "/" + to_string(z) + "." + mapname + ".png");
-			appendImages(&image, imageCols.begin(), imageCols.end());
-			g_logger(G_LOG_LEVEL_MESSAGE, "\tWriting MegaTile to: %s", megatile_path.c_str());
-
-			if (verbose) {
-				image.display();
-			}
-
-			image.write(megatile_path);
-		}
+		g_logger(G_LOG_LEVEL_MESSAGE, "\tFound Tiles: %ld", found_tiles);
+		g_logger(G_LOG_LEVEL_MESSAGE, "\tFound Metatiles: %ld", found_metatiles);
 	}
 }

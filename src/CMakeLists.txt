@@ -212,6 +212,8 @@ if(ImageMagick_FOUND)
     set(IMAGEMAGICK_LIBRARIES ${ImageMagick_LIBRARIES})
   endif()
 
+  set(CMAKE_CXX_STANDARD 17)
+
   set(test_metatile_SRCS
     ${COMMON_SRCS}
     ${STORE_SRCS}
