@@ -75,8 +75,10 @@ module AP_MODULE_DECLARE_DATA tile_module;
 
 APLOG_USE_MODULE(tile);
 
-#if (defined(__FreeBSD__) || defined(__MACH__)) && !defined(s6_addr32)
-#define s6_addr32 __u6_addr.__u6_addr32
+#if defined(AF_INET6) && !defined(s6_addr32)
+#  if defined(__APPLE__)|| defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#    define s6_addr32	__u6_addr.__u6_addr32
+#  endif
 #endif
 
 apr_shm_t *stats_shm;
