@@ -43,7 +43,6 @@
 
 #include "catch/catch.hpp"
 #include "catch_test_common.hpp"
-#include "config.h"
 #include "g_logger.h"
 #include "gen_tile.h"
 #include "metatile.h"
@@ -82,14 +81,7 @@ void *addition_thread(void *arg)
 {
 	struct request_queue *queue = (struct request_queue *)arg;
 	struct item *item;
-	uint64_t threadid;
-#ifdef __MACH__ // Mac OS X does not support SYS_gettid
-	pthread_threadid_np(NULL, &threadid);
-#elif __FreeBSD__ // FreeBSD does not support SYS_getid either
-	threadid = (uint64_t)pthread_self();
-#else
-	threadid = syscall(SYS_gettid);
-#endif
+	uint64_t threadid = (uint64_t)pthread_self();
 
 	// Requests need to be unique across threads to avoid being discarded as duplicates,
 	// thereby ensuring the queue counts can be compared correctly.

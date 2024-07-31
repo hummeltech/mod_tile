@@ -265,9 +265,12 @@ int make_connection(const char *spath)
 		if (!hostname_len) {
 			hostname = strdup(RENDERD_HOST);
 		} else {
-			hostname = malloc(hostname_len + sizeof('\0'));
-			assert(hostname != NULL);
-			strncpy(hostname, spath, hostname_len);
+			hostname = strndup(spath, hostname_len);
+		}
+
+		if (!hostname) {
+			g_logger(G_LOG_LEVEL_CRITICAL, "Error duplicating hostname: %s", strerror(errno));
+			exit(2);
 		}
 
 		if (d) {
@@ -348,6 +351,8 @@ int make_connection(const char *spath)
 			g_logger(G_LOG_LEVEL_CRITICAL, "cannot connect to any address for %s", hostname);
 			exit(2);
 		}
+
+		free(hostname);
 	}
 
 	return fd;

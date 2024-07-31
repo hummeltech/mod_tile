@@ -910,7 +910,7 @@ int main(int argc, char **argv)
 
 	unlink(config.socketname);
 	free_map_sections(maps);
-	free_renderd_sections(config_slaves);
+	free_renderd_section(config_slaves[active_renderd_section_num]);
 	close(fd);
 	return 0;
 }

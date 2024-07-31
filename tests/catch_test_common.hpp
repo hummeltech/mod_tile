@@ -15,11 +15,11 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#include <string>
-#include <vector>
-
 #ifndef CATCH_TEST_COMMON_HPP
 #define CATCH_TEST_COMMON_HPP
+
+#include <string>
+#include <vector>
 
 typedef struct _captured_stdio {
 	int temp_fd;

@@ -18,15 +18,12 @@
 #include <fstream>
 #include <string>
 #include <sys/un.h>
+#include <sys/wait.h>
 
 #include "catch/catch.hpp"
 #include "catch_test_common.hpp"
 #include "render_config.h"
 #include "renderd.h"
-
-#ifdef __FreeBSD__
-#include <sys/wait.h>
-#endif
 
 #ifndef PROJECT_BINARY_DIR
 #define PROJECT_BINARY_DIR "."

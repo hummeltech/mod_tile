@@ -305,22 +305,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	// initialise arrays for tile markings
-
-	tile_requested = (unsigned int **)malloc((max_zoom - excess_zoomlevels + 1) * sizeof(unsigned int *));
-
-	for (int i = 0; i <= max_zoom - excess_zoomlevels; i++) {
-		// initialize twopow array
-		twopow[i] = (i == 0) ? 1 : twopow[i - 1] * 2;
-		unsigned long long fourpow = twopow[i] * twopow[i];
-		tile_requested[i] = (unsigned int *)calloc((fourpow / METATILE) + 1, 1);
-
-		if (NULL == tile_requested[i]) {
-			g_logger(G_LOG_LEVEL_CRITICAL, "not enough memory available");
-			return 1;
-		}
-	}
-
 	store = init_storage_backend(tile_dir);
 
 	if (store == NULL) {
@@ -362,6 +346,22 @@ int main(int argc, char **argv)
 		// No need to spawn render threads, when we're not actually going to rerender tiles
 		spawn_workers(num_threads, socketname, max_load);
 		doRender = 1;
+	}
+
+	// initialise arrays for tile markings
+
+	tile_requested = (unsigned int **)malloc((max_zoom - excess_zoomlevels + 1) * sizeof(unsigned int *));
+
+	for (int i = 0; i <= max_zoom - excess_zoomlevels; i++) {
+		// initialize twopow array
+		twopow[i] = (i == 0) ? 1 : twopow[i - 1] * 2;
+		unsigned long long fourpow = twopow[i] * twopow[i];
+		tile_requested[i] = (unsigned int *)calloc((fourpow / METATILE) + 1, 1);
+
+		if (NULL == tile_requested[i]) {
+			g_logger(G_LOG_LEVEL_CRITICAL, "not enough memory available");
+			return 1;
+		}
 	}
 
 	gettimeofday(&start, NULL);
