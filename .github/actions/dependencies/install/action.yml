@@ -88,18 +88,14 @@ inputs:
   openbsd-build-dependencies:
     default: >-
       apache-httpd
-      cairo
       coreutils
-      curl
       glib2
       iniparser
-      libmemcached
       mapnik
       pkgconf
   openbsd-test-dependencies:
     default: >-
       jq
-      memcached--
   opensuse-build-dependencies:
     default: >-
       apache2-devel
