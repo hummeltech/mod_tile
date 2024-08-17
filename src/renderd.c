@@ -122,7 +122,7 @@ enum protoCmd rx_request(struct protocol *req, int fd)
 
 	// Upgrade version 1 and 2 to  version 3
 	if (req->ver == 1) {
-		strcpy(req->xmlname, "default");
+		strncpy(req->xmlname, "default", sizeof(req->xmlname));
 	}
 
 	if (req->ver < 3) {
