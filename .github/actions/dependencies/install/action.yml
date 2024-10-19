@@ -185,13 +185,14 @@ inputs:
   ubuntu-test-dependencies:
     default: >-
       apache2
+      git
       jq
       lcov
       memcached
   mapnik-build-version-centos-stream:
-    default: 4.0.0
+    default: 4.0.2
   mapnik-build-version-opensuse:
-    default: 4.0.0
+    default: 4.0.2
 
 runs:
   using: composite
