@@ -122,19 +122,26 @@ execute_process(COMMAND ${APXS_EXECUTABLE} -q sysconfdir
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-if(LIBMAPNIK_VERSION VERSION_LESS 4)
+pkg_get_variable(MAPNIK_FONTS_DIR libmapnik fonts_dir)
+pkg_get_variable(MAPNIK_PLUGINS_DIR libmapnik plugins_dir)
+if(MAPNIK_FONTS_DIR STREQUAL "" AND MAPNIK_PLUGINS_DIR STREQUAL "")
   find_program(MAPNIK_CONFIG_EXECUTABLE NAMES mapnik-config REQUIRED)
+  if(LIBMAPNIK_VERSION VERSION_GREATER_EQUAL 4)
+    message(WARNING "Mapnik >= 4 not built with CMake doesn't provide pkg-config support.")
+  endif()
   execute_process(COMMAND ${MAPNIK_CONFIG_EXECUTABLE} --fonts
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE MAPNIK_FONTS_DIR
   )
+  message(STATUS "Found Mapnik Fonts directory: ${MAPNIK_FONTS_DIR}")
   execute_process(COMMAND ${MAPNIK_CONFIG_EXECUTABLE} --input-plugins
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE MAPNIK_PLUGINS_DIR
   )
-elseif(LIBMAPNIK_VERSION VERSION_GREATER_EQUAL 4)
-  pkg_get_variable(MAPNIK_FONTS_DIR libmapnik fonts_dir)
-  pkg_get_variable(MAPNIK_PLUGINS_DIR libmapnik plugins_dir)
+  message(STATUS "Found Mapnik Plugins directory: ${MAPNIK_PLUGINS_DIR}")
+  if(EXISTS "${LIBMAPNIK_INCLUDE_DIR}/deps")
+    list(APPEND LIBMAPNIK_INCLUDE_DIRS "${LIBMAPNIK_INCLUDE_DIR}/deps")
+  endif()
 endif()
 
 if(NOT CMAKE_INSTALL_MODULESDIR)

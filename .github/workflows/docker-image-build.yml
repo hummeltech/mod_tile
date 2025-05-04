@@ -4,6 +4,8 @@ name: Docker Image Build
 on:
   pull_request:
   push:
+    branches:
+      - "*CI*"
     paths:
       - "docker/**"
       - ".github/workflows/docker-image-build.yml"
