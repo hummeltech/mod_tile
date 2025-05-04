@@ -122,8 +122,14 @@ execute_process(COMMAND ${APXS_EXECUTABLE} -q sysconfdir
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-if(LIBMAPNIK_VERSION VERSION_LESS 4)
+if(DEFINED pkgcfg_lib_LIBMAPNIK_mapnik)
+  pkg_get_variable(MAPNIK_FONTS_DIR libmapnik fonts_dir)
+  pkg_get_variable(MAPNIK_PLUGINS_DIR libmapnik plugins_dir)
+else()
   find_program(MAPNIK_CONFIG_EXECUTABLE NAMES mapnik-config REQUIRED)
+  if(LIBMAPNIK_VERSION VERSION_GREATER_EQUAL 4)
+    message(WARNING "Using 'mapnik' > 3 built with SCONS may cause build issues")
+  endif()
   execute_process(COMMAND ${MAPNIK_CONFIG_EXECUTABLE} --fonts
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE MAPNIK_FONTS_DIR
@@ -132,9 +138,9 @@ if(LIBMAPNIK_VERSION VERSION_LESS 4)
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE MAPNIK_PLUGINS_DIR
   )
-elseif(LIBMAPNIK_VERSION VERSION_GREATER_EQUAL 4)
-  pkg_get_variable(MAPNIK_FONTS_DIR libmapnik fonts_dir)
-  pkg_get_variable(MAPNIK_PLUGINS_DIR libmapnik plugins_dir)
+  if(EXISTS "${LIBMAPNIK_INCLUDE_DIR}/deps")
+    list(APPEND LIBMAPNIK_INCLUDE_DIRS "${LIBMAPNIK_INCLUDE_DIR}/deps")
+  endif()
 endif()
 
 if(NOT CMAKE_INSTALL_MODULESDIR)
