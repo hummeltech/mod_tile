@@ -66,7 +66,6 @@ RUN --mount=type=cache,id=opensuse/${opensuse_release}:${opensuse_version}-mapni
 WORKDIR /tmp/mapnik_build
 RUN --mount=type=cache,id=opensuse/${opensuse_release}:${opensuse_version}-mapnik-src:${mapnik_version},target=/tmp/mapnik_src \
     --mount=type=cache,id=opensuse/${opensuse_release}:${opensuse_version}-mapnik-build:${mapnik_version},target=/tmp/mapnik_build \
-    CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)" && export CMAKE_BUILD_PARALLEL_LEVEL && \
     export DESTDIR=/tmp/mapnik && \
     cmake -B . -S /tmp/mapnik_src \
         -DBUILD_BENCHMARK:BOOL=OFF \
@@ -82,7 +81,7 @@ RUN --mount=type=cache,id=opensuse/${opensuse_release}:${opensuse_version}-mapni
         -DBUILD_UTILITY_SVG2PNG:BOOL=OFF \
         -DCMAKE_BUILD_TYPE:STRING=Release \
         -DCMAKE_INSTALL_PREFIX:PATH=/usr && \
-    cmake --build . && \
+    cmake --build . --parallel && \
     cmake --install . --strip
 
 # Builder
@@ -129,17 +128,15 @@ RUN id nobody || useradd --home-dir / --no-create-home --shell /usr/sbin/nologin
 ## Build, Test & Install `mod_tile`
 COPY . /tmp/mod_tile_src
 WORKDIR /tmp/mod_tile_build
-RUN CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)" && export CMAKE_BUILD_PARALLEL_LEVEL && \
-    cmake -B . -S /tmp/mod_tile_src \
+RUN cmake -B . -S /tmp/mod_tile_src \
         -DCMAKE_BUILD_TYPE:STRING=Release \
         -DCMAKE_INSTALL_LOCALSTATEDIR:PATH=/var \
         -DCMAKE_INSTALL_PREFIX:PATH=/usr \
         -DCMAKE_INSTALL_RUNSTATEDIR:PATH=/run \
         -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
         -DENABLE_TESTS:BOOL=ON && \
-    cmake --build .
-RUN CTEST_PARALLEL_LEVEL="$(nproc)" && export CTEST_PARALLEL_LEVEL && \
-    ctest --output-on-failure
+    cmake --build . --parallel
+RUN ctest --output-on-failure --parallel
 RUN export DESTDIR=/tmp/mod_tile && \
     cmake --install . --strip
 

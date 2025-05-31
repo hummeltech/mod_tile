@@ -16,6 +16,5 @@ runs:
 
     - name: Build `mod_tile`
       run: |
-        export CMAKE_BUILD_PARALLEL_LEVEL=${BUILD_PARALLEL_LEVEL:-$(nproc)}
-        cmake --build build
+        cmake --build build --parallel
       shell: bash --noprofile --norc -euxo pipefail {0}

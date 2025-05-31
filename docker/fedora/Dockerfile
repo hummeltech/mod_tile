@@ -40,17 +40,15 @@ RUN --mount=type=cache,sharing=locked,id=fedora:${fedora_version}-/var/cache/dnf
 ## Build, Test & Install `mod_tile`
 COPY . /tmp/mod_tile_src
 WORKDIR /tmp/mod_tile_build
-RUN CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)" && export CMAKE_BUILD_PARALLEL_LEVEL && \
-    cmake -B . -S /tmp/mod_tile_src \
+RUN cmake -B . -S /tmp/mod_tile_src \
         -DCMAKE_BUILD_TYPE:STRING=Release \
         -DCMAKE_INSTALL_LOCALSTATEDIR:PATH=/var \
         -DCMAKE_INSTALL_PREFIX:PATH=/usr \
         -DCMAKE_INSTALL_RUNSTATEDIR:PATH=/run \
         -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
         -DENABLE_TESTS:BOOL=ON && \
-    cmake --build .
-RUN CTEST_PARALLEL_LEVEL="$(nproc)" && export CTEST_PARALLEL_LEVEL && \
-    ctest --output-on-failure
+    cmake --build . --parallel
+RUN ctest --output-on-failure --parallel
 RUN export DESTDIR=/tmp/mod_tile && \
     cmake --install . --strip
 

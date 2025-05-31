@@ -250,16 +250,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set `BUILD_PARALLEL_LEVEL` & `TEST_PARALLEL_LEVEL`
+      - name: Set `CPUS`
         run: |
-          echo "BUILD_PARALLEL_LEVEL=$(nproc)" >> ${GITHUB_ENV}
-          echo "TEST_PARALLEL_LEVEL=$(nproc)" >> ${GITHUB_ENV}
+          echo "CPUS=$(nproc)" >> ${GITHUB_ENV}
 
       - name: Provision VM
         uses: hummeltech/freebsd-vagrant-action@v4
         with:
           box: bento/${{ matrix.box_freebsd }}
-          cpus: ${{ env.BUILD_PARALLEL_LEVEL }}
+          cpus: ${{ env.CPUS }}
           memory: 4096
           ssh_shell: sh
 

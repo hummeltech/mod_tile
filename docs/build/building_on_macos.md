@@ -29,7 +29,6 @@ brew install \
   pkg-config
 
 # Download, Build, Test & Install `mod_tile`
-export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc)
 export CPATH=$(brew --prefix)/include
 export ICU_ROOT=$(brew --prefix icu4c)
 export LDFLAGS="-undefined dynamic_lookup"
@@ -46,8 +45,8 @@ cmake -B . -S /tmp/mod_tile_src \
   -DCMAKE_INSTALL_RUNSTATEDIR:PATH=/var/run \
   -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
   -DENABLE_TESTS:BOOL=ON
-cmake --build .
-ctest
+cmake --build . --parallel
+ctest --parallel
 sudo cmake --install . --strip
 
 # Create /usr/local/share/renderd directory

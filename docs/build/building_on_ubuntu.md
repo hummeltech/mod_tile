@@ -34,7 +34,6 @@ sudo apt --no-install-recommends --yes install \
   librados-dev
 
 # Download, Build, Test & Install `mod_tile`
-export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc)
 rm -rf /tmp/mod_tile_src /tmp/mod_tile_build
 mkdir /tmp/mod_tile_src /tmp/mod_tile_build
 cd /tmp/mod_tile_src
@@ -47,8 +46,8 @@ cmake -B . -S /tmp/mod_tile_src \
   -DCMAKE_INSTALL_RUNSTATEDIR:PATH=/run \
   -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
   -DENABLE_TESTS:BOOL=ON
-cmake --build .
-ctest
+cmake --build . --parallel
+ctest --parallel
 sudo cmake --install . --strip
 
 # Create /usr/share/renderd directory

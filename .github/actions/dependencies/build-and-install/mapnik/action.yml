@@ -28,7 +28,6 @@ runs:
 
     - name: Build `Mapnik`
       run: |
-        export CMAKE_BUILD_PARALLEL_LEVEL=${BUILD_PARALLEL_LEVEL:-$(nproc)}
         cmake -B mapnik-build -S mapnik-src \
           -DBUILD_BENCHMARK:BOOL=OFF \
           -DBUILD_DEMO_CPP:BOOL=OFF \
@@ -43,7 +42,7 @@ runs:
           -DBUILD_UTILITY_SVG2PNG:BOOL=OFF \
           -DCMAKE_BUILD_TYPE:STRING=Release \
           -DCMAKE_INSTALL_PREFIX:PATH=/usr
-        cmake --build mapnik-build
+        cmake --build mapnik-build --parallel
       shell: bash --noprofile --norc -euxo pipefail {0}
       if: steps.cache-mapnik.outputs.cache-hit != 'true'
 

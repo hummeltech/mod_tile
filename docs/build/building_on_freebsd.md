@@ -33,7 +33,6 @@ sudo pkg install --yes \
   pkgconf
 
 # Download, Build, Test & Install `mod_tile`
-export CMAKE_BUILD_PARALLEL_LEVEL=$(sysctl -n hw.ncpu)
 export CTEST_CLIENT_HOST="::1"
 export CTEST_SERVER_HOST="localhost"
 export LIBRARY_PATH="/usr/local/lib"
@@ -49,8 +48,8 @@ cmake -B . -S /tmp/mod_tile_src \
   -DCMAKE_INSTALL_RUNSTATEDIR:PATH=/run \
   -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
   -DENABLE_TESTS:BOOL=ON
-cmake --build .
-ctest
+cmake --build . --parallel
+ctest --parallel
 sudo cmake --install . --strip
 
 # Create /usr/share/renderd directory

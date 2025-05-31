@@ -1,14 +1,13 @@
 ---
 inputs:
   options:
-    default: --exclude-regex 'clear_dirs_.+|remove_tile_.+' --output-on-failure
+    default: --exclude-regex 'clear_dirs_.+|remove_tile_.+' --output-on-failure --parallel
 
 runs:
   using: composite
   steps:
     - name: Test `mod_tile`
       run: |
-        export CTEST_PARALLEL_LEVEL=${TEST_PARALLEL_LEVEL:-$(nproc)}
         ctest ${{ inputs.options }}
       shell: bash --noprofile --norc -euxo pipefail {0}
       working-directory: build
