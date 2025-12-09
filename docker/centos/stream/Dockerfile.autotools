@@ -36,9 +36,10 @@ RUN --mount=type=cache,sharing=locked,id=centos:stream${centos_stream_version}-/
         freetype-devel \
         gcc \
         gcc-c++ \
-        gdal-devel \
+        gdal-devel-$(dnf list gdal-devel --showduplicates | grep epel | awk '{print $2}') \
         git \
         harfbuzz-devel \
+        libavif-devel \
         libicu-devel \
         libjpeg-devel \
         libpng-devel \
@@ -93,11 +94,12 @@ RUN --mount=type=cache,sharing=locked,id=centos:stream${centos_stream_version}-/
         cairo-devel \
         gcc \
         gcc-c++ \
-        gdal \
+        gdal-$(dnf list gdal --showduplicates | grep epel | awk '{print $2}') \
         glib2-devel \
         harfbuzz-devel \
         httpd-devel \
         iniparser-devel \
+        libavif-devel \
         libcurl-devel \
         libicu-devel \
         libjpeg-devel \
@@ -134,10 +136,11 @@ RUN --mount=type=cache,sharing=locked,id=centos:stream${centos_stream_version}-/
     dnf --assumeyes install \
         boost-regex \
         cairo \
-        gdal \
+        gdal-$(dnf list gdal --showduplicates | grep epel | awk '{print $2}') \
         harfbuzz \
         httpd \
         iniparser \
+        libavif \
         libicu \
         libmemcached \
         librados2 \
