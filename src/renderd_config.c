@@ -104,7 +104,7 @@ static void process_config_string(const dictionary *ini, const char *section, co
 	free(key);
 }
 
-static char *process_config_string_with_trailing_slash(const dictionary *ini, const char *section, const char *name, const char **dest, const char *notfound, size_t maxlen)
+static void process_config_string_with_trailing_slash(const dictionary *ini, const char *section, const char *name, const char **dest, const char *notfound, size_t maxlen)
 {
 	char *key = name_with_section(section, name);
 	const char *src = iniparser_getstring(ini, key, notfound);
