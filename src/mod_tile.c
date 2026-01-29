@@ -95,9 +95,6 @@ struct storage_backends {
 };
 
 static int error_message(request_rec *r, const char *format, ...)
-__attribute__((format(printf, 2, 3)));
-
-static int error_message(request_rec *r, const char *format, ...)
 {
 	va_list ap;
 	char *msg;
@@ -1088,9 +1085,45 @@ static int tile_storage_hook(request_rec *r)
 	return HTTP_NOT_FOUND;
 }
 
+/**
+ * Safely converts a string to an integer.
+ * Returns APR_SUCCESS if the whole string was a valid number.
+ */
+static apr_status_t safe_parse_int(const char *str, int *result)
+{
+	char *endptr;
+
+	if (!str || *str == '\0') {
+		return APR_EINVAL;
+	}
+
+	// We use base 10 for coordinates
+	apr_int64_t val = apr_strtoi64(str, &endptr, 10);
+
+	// Check if we reached the end of the string.
+	// If *endptr isn't '\0', it means there was non-numeric garbage.
+	if (*endptr != '\0') {
+		return APR_EINVAL;
+	}
+
+	*result = (int)val;
+	return APR_SUCCESS;
+}
+
+// helper to split the extension from the filename (e.g., "12.png" -> "png")
+static void get_extension(char *filename, char *ext_dest, size_t dest_len)
+{
+	char *dot = strrchr(filename, '.');
+
+	if (dot) {
+		apr_cpystrn(ext_dest, dot + 1, dest_len);
+		*dot = '\0'; // Truncate the filename at the dot to leave just the number
+	}
+}
+
 static int tile_translate(request_rec *r)
 {
-	int i, n, limit, oob;
+	int basuri_len, i, limit, oob;
 	char option[11];
 	char extension[256];
 
@@ -1124,18 +1157,19 @@ static int tile_translate(request_rec *r)
 
 	for (i = 0; i < scfg->configs->nelts; ++i) {
 		tile_config_rec *tile_config = &tile_configs[i];
+		basuri_len = strlen(tile_config->baseuri);
 
 		ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "tile_translate: testing baseuri(%s) name(%s) extension(%s)",
 			      tile_config->baseuri, tile_config->xmlname, tile_config->fileExtension);
 
-		if (!strncmp(tile_config->baseuri, r->uri, strlen(tile_config->baseuri))) {
+		if (!strncmp(tile_config->baseuri, r->uri, basuri_len)) {
 
 			struct tile_request_data *rdata = (struct tile_request_data *)apr_pcalloc(r->pool, sizeof(struct tile_request_data));
 			struct protocol *cmd = (struct protocol *)apr_pcalloc(r->pool, sizeof(struct protocol));
 			bzero(cmd, sizeof(struct protocol));
 			bzero(rdata, sizeof(struct tile_request_data));
 
-			if (!strncmp(r->uri + strlen(tile_config->baseuri), "tile-layer.json", strlen("tile-layer.json"))) {
+			if (!strncmp(r->uri + basuri_len, "tile-layer.json", strlen("tile-layer.json"))) {
 				ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "tile_translate: Requesting tileJSON for tilelayer %s", tile_config->xmlname);
 				r->handler = "tile_json";
 				rdata->layerNumber = i;
@@ -1145,24 +1179,75 @@ static int tile_translate(request_rec *r)
 
 			char parameters[XMLCONFIG_MAX];
 
-			if (tile_config->enableOptions) {
-				cmd->ver = PROTO_VER;
-				n = sscanf(r->uri + strlen(tile_config->baseuri), "%40[^/]/%d/%d/%d.%255[a-z]/%10s", parameters, &(cmd->z), &(cmd->x), &(cmd->y), extension, option);
+			// 1. Get the part of the URI after the base
+			char *path_info = apr_pstrdup(r->pool, r->uri + basuri_len);
 
-				if (n < 5) {
-					ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "tile_translate: Invalid URL for tilelayer %s with options", tile_config->xmlname);
+			// 2. Tokenize into an array
+			// We split by "/" to get parts like ["layername", "12", "123", "456.png", "option"]
+			apr_array_header_t *parts = apr_array_make(r->pool, 6, sizeof(char *));
+			char *last;
+			char *token = apr_strtok(path_info, "/", &last);
+
+			while (token) {
+				*(char **)apr_array_push(parts) = token;
+				token = apr_strtok(NULL, "/", &last);
+			}
+
+			char **elts = (char **)parts->elts;
+			int n_parts = parts->nelts;
+
+			// 3. Path processing logic
+			if (tile_config->enableOptions && n_parts >= 4) {
+				// Expected: /parameter_options/z/x/y.ext/option
+				cmd->ver = PROTO_VER;
+				apr_cpystrn(parameters, elts[0], 41);
+
+				// Parse Z, X, Y safely
+				if (safe_parse_int(elts[1], &(cmd->z)) != APR_SUCCESS ||
+						safe_parse_int(elts[2], &(cmd->x)) != APR_SUCCESS) {
+					ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "tile_translate: Invalid Z/X coordinates: %s/%s", elts[1], elts[2]);
 					return DECLINED;
+				}
+
+				// Special handling for elts[3] which is "y.ext"
+				char *y_str = apr_pstrdup(r->pool, elts[3]);
+				get_extension(y_str, extension, 256); // This null-terminates y_str at the dot
+
+				if (safe_parse_int(y_str, &(cmd->y)) != APR_SUCCESS) {
+					ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "tile_translate: Invalid Y coordinate: %s", y_str);
+					return DECLINED;
+				}
+
+				if (n_parts >= 5) {
+					apr_cpystrn(option, elts[4], 11);
+				}
+			} else if (!tile_config->enableOptions && n_parts >= 3) {
+				// Expected: /z/x/y.ext/option
+				cmd->ver = 2;
+				parameters[0] = '\0';
+
+				// Parse Z, X, Y safely
+				if (safe_parse_int(elts[0], &(cmd->z)) != APR_SUCCESS ||
+						safe_parse_int(elts[1], &(cmd->x)) != APR_SUCCESS) {
+					ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "tile_translate: Invalid Z/X coordinates: %s/%s", elts[0], elts[1]);
+					return DECLINED;
+				}
+
+				// Special handling for elts[2] which is "y.ext"
+				char *y_str = apr_pstrdup(r->pool, elts[2]);
+				get_extension(y_str, extension, 256); // This null-terminates y_str at the dot
+
+				if (safe_parse_int(y_str, &(cmd->y)) != APR_SUCCESS) {
+					ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "tile_translate: Invalid Y coordinate: %s", y_str);
+					return DECLINED;
+				}
+
+				if (n_parts >= 4) {
+					apr_cpystrn(option, elts[3], 11);
 				}
 			} else {
-				cmd->ver = 2;
-				n = sscanf(r->uri + strlen(tile_config->baseuri), "%d/%d/%d.%255[a-z]/%10s", &(cmd->z), &(cmd->x), &(cmd->y), extension, option);
-
-				if (n < 4) {
-					ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "tile_translate: Invalid URL for tilelayer %s without options", tile_config->xmlname);
-					return DECLINED;
-				}
-
-				parameters[0] = 0;
+				ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "tile_translate: Invalid tile path structure");
+				return DECLINED;
 			}
 
 			if (strcmp(extension, tile_config->fileExtension) != 0) {
@@ -1188,9 +1273,9 @@ static int tile_translate(request_rec *r)
 				return HTTP_NOT_FOUND;
 			}
 
-			strcpy(cmd->xmlname, tile_config->xmlname);
-			strcpy(cmd->mimetype, tile_config->mimeType);
-			strcpy(cmd->options, parameters);
+			apr_cpystrn(cmd->xmlname, tile_config->xmlname, XMLCONFIG_MAX);
+			apr_cpystrn(cmd->mimetype, tile_config->mimeType, XMLCONFIG_MAX);
+			apr_cpystrn(cmd->options, parameters, XMLCONFIG_MAX);
 
 			// Store a copy for later
 			rdata->cmd = cmd;
@@ -1211,7 +1296,7 @@ static int tile_translate(request_rec *r)
 
 			r->filename = NULL;
 
-			if ((tile_config->enableOptions && (n == 6)) || (!tile_config->enableOptions && (n == 5))) {
+			if ((tile_config->enableOptions && (n_parts == 5)) || (!tile_config->enableOptions && (n_parts == 4))) {
 				if (!strcmp(option, "status")) {
 					r->handler = "tile_status";
 				} else if (!strcmp(option, "dirty")) {
