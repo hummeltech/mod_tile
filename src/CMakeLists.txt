@@ -219,23 +219,27 @@ target_include_directories(gen_tile_test PRIVATE ${PROJECT_SOURCE_DIR}/tests)
 target_link_libraries(gen_tile_test ${gen_tile_test_LIBS})
 set_target_properties(gen_tile_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
+
 #-----------------------------------------------------------------------------
 #
-#  renderd_config_test_helper
+#  unit_test_renderd_config
 #
 #-----------------------------------------------------------------------------
 
-set(renderd_config_test_helper_SRCS
-  ${PROJECT_SOURCE_DIR}/tests/renderd_config_test_helper.cpp
-  g_logger.c
-  renderd_config.c
+set(unit_test_renderd_config_SRCS
+  $<TARGET_OBJECTS:catch_main_o>
+  ${PROJECT_SOURCE_DIR}/tests/unit_test_renderd_config.cpp
 )
-set(renderd_config_test_helper_LIBS
+set(unit_test_renderd_config_LIBS
   ${GLIB_LIBRARIES}
   ${INIPARSER_LIBRARIES}
 )
-add_executable(renderd_config_test_helper ${renderd_config_test_helper_SRCS})
-target_link_libraries(renderd_config_test_helper ${renderd_config_test_helper_LIBS})
-set_target_properties(renderd_config_test_helper PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+add_executable(unit_test_renderd_config ${unit_test_renderd_config_SRCS})
+set_target_properties(unit_test_renderd_config PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+target_compile_definitions(unit_test_renderd_config PRIVATE
+  RENDERD_CONF="${PROJECT_SOURCE_DIR}/etc/renderd/renderd.conf.examples"
+)
+target_include_directories(unit_test_renderd_config PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
+target_link_libraries(unit_test_renderd_config ${unit_test_renderd_config_LIBS})
 
 endif()
