@@ -15,7 +15,9 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <sys/un.h>
 #include <unistd.h>
@@ -520,7 +522,7 @@ void process_config_file(const char *config_file_name, int active_renderd_sectio
 	}
 
 	if (config.ipport > 0) {
-		g_logger(log_level, "\trenderd: ip socket = '%s':%i", config.iphostname, config.ipport);
+		g_logger(log_level, "\trenderd: ip socket = '%s:%i'", config.iphostname, config.ipport);
 	} else {
 		g_logger(log_level, "\trenderd: unix socketname = '%s'", config.socketname);
 	}
