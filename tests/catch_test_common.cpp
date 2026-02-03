@@ -17,6 +17,7 @@
 
 #include <glib.h>
 #include <iostream>
+#include <setjmp.h>
 #include <stdio.h>
 #include <string>
 #include <tuple>
@@ -27,6 +28,9 @@
 
 extern int foreground;
 
+int exit_status = 0;
+bool fail_next = false;
+jmp_buf exit_jump;
 std::string err_log_lines, out_log_lines;
 
 captured_stdio captured_stderr;
@@ -178,4 +182,54 @@ std::tuple<std::string, std::string> end_capture(bool print)
 	foreground = 0;
 
 	return std::tuple<std::string, std::string>(get_captured_stderr(print), get_captured_stdout(print));
+}
+
+extern "C" {
+	int mocked_asprintf(char **strp, const char *fmt, ...)
+	{
+		if (fail_next) {
+			fail_next = false;
+			*strp = nullptr;
+			return -1;
+		}
+
+		va_list args;
+		va_start(args, fmt);
+		int result = vasprintf(strp, fmt, args);
+		va_end(args);
+		return result;
+	}
+
+	void mocked_exit(int status)
+	{
+		exit_status = status;
+		longjmp(exit_jump, 1);
+	}
+
+	void mocked_g_logger(int log_level, const char *format, ...)
+	{
+		char *log_message;
+		va_list args;
+
+		va_start(args, format);
+
+		vasprintf(&log_message, format, args);
+
+		va_end(args);
+
+		err_log_lines.append(log_message);
+		err_log_lines.append("\n");
+
+		free(log_message);
+	}
+
+	char *mocked_strndup(const char *s, size_t n)
+	{
+		if (fail_next) {
+			fail_next = false;
+			return nullptr;
+		}
+
+		return strndup(s, n);
+	}
 }

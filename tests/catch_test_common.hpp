@@ -40,4 +40,11 @@ std::tuple<std::string, std::string> end_capture(bool print = false);
 
 int run_command(const std::string &file, std::vector<std::string> argv = {}, const std::string &input = "");
 
+extern "C" {
+	int mocked_asprintf(char **strp, const char *fmt, ...);
+	void mocked_exit(int status);
+	void mocked_g_logger(int log_level, const char *format, ...);
+	char *mocked_strndup(const char *s, size_t n);
+}
+
 #endif
