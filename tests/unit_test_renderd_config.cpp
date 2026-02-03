@@ -1,4 +1,3 @@
-#include <cstdarg>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -15,60 +14,12 @@
 #define RENDERD_CONF "./etc/renderd/renderd.conf.examples"
 #endif
 
-int exit_status = 0;
-static bool fail_next = false;
-static jmp_buf exit_jump;
+extern int exit_status;
+extern bool fail_next;
+extern jmp_buf exit_jump;
 extern std::string err_log_lines;
 
 extern "C" {
-	int mocked_asprintf(char **strp, const char *fmt, ...)
-	{
-		if (fail_next) {
-			fail_next = false;
-			*strp = nullptr;
-			return -1;
-		}
-
-		va_list args;
-		va_start(args, fmt);
-		int result = vasprintf(strp, fmt, args);
-		va_end(args);
-		return result;
-	}
-
-	void mocked_exit(int status)
-	{
-		exit_status = status;
-		longjmp(exit_jump, 1);
-	}
-
-	void mocked_g_logger(int log_level, const char *format, ...)
-	{
-		char *log_message;
-		va_list args;
-
-		va_start(args, format);
-
-		vasprintf(&log_message, format, args);
-
-		va_end(args);
-
-		err_log_lines.append(log_message);
-		err_log_lines.append("\n");
-
-		free(log_message);
-	}
-
-	char *mocked_strndup(const char *s, size_t n)
-	{
-		if (fail_next) {
-			fail_next = false;
-			return nullptr;
-		}
-
-		return strndup(s, n);
-	}
-
 #define asprintf mocked_asprintf
 #define exit mocked_exit
 #define g_logger mocked_g_logger
@@ -611,9 +562,9 @@ TEST_CASE("renderd.conf file processing exit handling", "[renderd_config] [proce
 		}
 
 		REQUIRE(exit_status == 0);
-        REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("renderd: num_slave_threads = '4'"));
         REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("renderd(1): num_threads = '2'"));
         REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("renderd(2): num_threads = '2'"));
+        REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("renderd: num_slave_threads = '4'"));
 	}
 
 	SECTION("renderd.conf renderd section not using unix socketname", "should return 0") {
