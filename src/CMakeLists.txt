@@ -212,12 +212,97 @@ set(gen_tile_test_SRCS
 )
 set(gen_tile_test_LIBS
   ${renderd_LIBS}
+  ${STORE_LIBRARIES}
 )
 add_executable(gen_tile_test ${gen_tile_test_SRCS})
+set_target_properties(gen_tile_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 target_compile_definitions(gen_tile_test PRIVATE MAIN_ALREADY_DEFINED)
 target_include_directories(gen_tile_test PRIVATE ${PROJECT_SOURCE_DIR}/tests)
 target_link_libraries(gen_tile_test ${gen_tile_test_LIBS})
-set_target_properties(gen_tile_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+
+
+#-----------------------------------------------------------------------------
+#
+#  unit_test_cache_expire
+#
+#-----------------------------------------------------------------------------
+
+set(unit_test_cache_expire_SRCS
+  $<TARGET_OBJECTS:catch_main_o>
+  ${PROJECT_SOURCE_DIR}/tests/unit_test_cache_expire.cpp
+)
+set(unit_test_cache_expire_LIBS
+  ${GLIB_LIBRARIES}
+)
+add_executable(unit_test_cache_expire ${unit_test_cache_expire_SRCS})
+set_target_properties(unit_test_cache_expire PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+target_include_directories(unit_test_cache_expire PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
+target_link_libraries(unit_test_cache_expire ${unit_test_cache_expire_LIBS})
+
+
+#-----------------------------------------------------------------------------
+#
+#  unit_test_metatile
+#
+#-----------------------------------------------------------------------------
+
+set(unit_test_metatile_SRCS
+  $<TARGET_OBJECTS:catch_main_o>
+  ${PROJECT_SOURCE_DIR}/tests/unit_test_metatile.cpp
+)
+set(unit_test_metatile_LIBS
+  ${GLIB_LIBRARIES}
+)
+add_executable(unit_test_metatile ${unit_test_metatile_SRCS})
+set_target_properties(unit_test_metatile PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+target_include_directories(unit_test_metatile PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
+target_link_libraries(unit_test_metatile ${unit_test_metatile_LIBS})
+
+
+#-----------------------------------------------------------------------------
+#
+#  unit_test_parameterize_style
+#
+#-----------------------------------------------------------------------------
+
+set(unit_test_parameterize_style_SRCS
+  $<TARGET_OBJECTS:catch_main_o>
+  ${PROJECT_SOURCE_DIR}/tests/unit_test_parameterize_style.cpp
+)
+set(unit_test_parameterize_style_LIBS
+  ${GLIB_LIBRARIES}
+  ${LIBMAPNIK_LIBRARIES}
+)
+add_executable(unit_test_parameterize_style ${unit_test_parameterize_style_SRCS})
+set_target_properties(unit_test_parameterize_style PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+target_compile_definitions(unit_test_parameterize_style PRIVATE
+  MAPNIK_XML="${PROJECT_SOURCE_DIR}/utils/example-map/mapnik.xml"
+)
+target_include_directories(unit_test_parameterize_style PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
+target_link_libraries(unit_test_parameterize_style ${unit_test_parameterize_style_LIBS})
+
+
+#-----------------------------------------------------------------------------
+#
+#  unit_test_protocol_helper
+#
+#-----------------------------------------------------------------------------
+
+set(unit_test_protocol_helper_SRCS
+  $<TARGET_OBJECTS:catch_main_o>
+  ${PROJECT_SOURCE_DIR}/tests/unit_test_protocol_helper.cpp
+)
+set(unit_test_protocol_helper_LIBS
+  ${GLIB_LIBRARIES}
+  ${INIPARSER_LIBRARIES}
+)
+add_executable(unit_test_protocol_helper ${unit_test_protocol_helper_SRCS})
+set_target_properties(unit_test_protocol_helper PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+target_compile_definitions(unit_test_protocol_helper PRIVATE
+  RENDERD_CONF="${PROJECT_SOURCE_DIR}/etc/renderd/renderd.conf.examples"
+)
+target_include_directories(unit_test_protocol_helper PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
+target_link_libraries(unit_test_protocol_helper ${unit_test_protocol_helper_LIBS})
 
 
 #-----------------------------------------------------------------------------

@@ -1755,36 +1755,6 @@ static int tile_handler_serve(request_rec *r)
 	return DECLINED;
 }
 
-static apr_status_t mod_tile_shutdown_handler(void *data)
-{
-	server_rec *s = (server_rec *)data;
-	tile_server_conf *scfg = (tile_server_conf *)ap_get_module_config(s->module_config, &tile_module);
-	tile_config_rec *tile_configs = (tile_config_rec *)scfg->configs->elts;
-	int tile_configs_count = scfg->configs->nelts;
-
-	ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
-		     "Cleaning up %i configs for server %s", tile_configs_count, s->server_hostname);
-
-	for (int i = 0; i < tile_configs_count; ++i) {
-		tile_config_rec *tile_config = &tile_configs[i];
-		ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
-			     "Freeing tile config for %s", tile_config->xmlname);
-		free((void *)*tile_config->hostnames);
-		free((void *)tile_config->hostnames);
-		free((void *)tile_config->attribution);
-		free((void *)tile_config->baseuri);
-		free((void *)tile_config->cors);
-		free((void *)tile_config->description);
-		free((void *)tile_config->fileExtension);
-		free((void *)tile_config->mimeType);
-		free((void *)tile_config->store);
-		free((void *)tile_config->xmlname);
-		free(tile_config);
-	}
-
-	return APR_SUCCESS;
-}
-
 /*
  * This routine is called in the parent, so we'll set up the shared
  * memory segment and mutex here.
@@ -1952,10 +1922,6 @@ static int mod_tile_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 	}
 
 #endif /* MOD_TILE_SET_MUTEX_PERMS */
-
-	for (server_rec *virt = s; virt != NULL; virt = virt->next) {
-		apr_pool_cleanup_register(pconf, (void *)virt, mod_tile_shutdown_handler, apr_pool_cleanup_null);
-	}
 
 	return OK;
 }
