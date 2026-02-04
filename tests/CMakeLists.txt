@@ -221,6 +221,26 @@ add_test(
 )
 
 add_test(
+  NAME unit_test_cache_expire
+  COMMAND unit_test_cache_expire
+)
+
+add_test(
+  NAME unit_test_metatile
+  COMMAND unit_test_metatile
+)
+
+add_test(
+  NAME unit_test_parameterize_style
+  COMMAND unit_test_parameterize_style
+)
+
+add_test(
+  NAME unit_test_protocol_helper
+  COMMAND unit_test_protocol_helper
+)
+
+add_test(
   NAME unit_test_renderd_config
   COMMAND unit_test_renderd_config
 )
