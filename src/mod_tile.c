@@ -1755,6 +1755,36 @@ static int tile_handler_serve(request_rec *r)
 	return DECLINED;
 }
 
+static apr_status_t mod_tile_shutdown_handler(void *data)
+{
+	server_rec *s = (server_rec *)data;
+	tile_server_conf *scfg = (tile_server_conf *)ap_get_module_config(s->module_config, &tile_module);
+	tile_config_rec *tile_configs = (tile_config_rec *)scfg->configs->elts;
+	int tile_configs_count = scfg->configs->nelts;
+
+	ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+		     "Cleaning up %i configs for server %s", tile_configs_count, s->server_hostname);
+
+	for (int i = 0; i < tile_configs_count; ++i) {
+		tile_config_rec *tile_config = &tile_configs[i];
+		ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+			     "Freeing tile config for %s", tile_config->xmlname);
+		free((void *)*tile_config->hostnames);
+		free((void *)tile_config->hostnames);
+		free((void *)tile_config->attribution);
+		free((void *)tile_config->baseuri);
+		free((void *)tile_config->cors);
+		free((void *)tile_config->description);
+		free((void *)tile_config->fileExtension);
+		free((void *)tile_config->mimeType);
+		free((void *)tile_config->store);
+		free((void *)tile_config->xmlname);
+		free(tile_config);
+	}
+
+	return APR_SUCCESS;
+}
+
 /*
  * This routine is called in the parent, so we'll set up the shared
  * memory segment and mutex here.
@@ -1923,6 +1953,10 @@ static int mod_tile_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 
 #endif /* MOD_TILE_SET_MUTEX_PERMS */
 
+	for (server_rec *virt = s; virt != NULL; virt = virt->next) {
+		apr_pool_cleanup_register(pconf, (void *)virt, mod_tile_shutdown_handler, apr_pool_cleanup_null);
+	}
+
 	return OK;
 }
 
@@ -1992,6 +2026,8 @@ static const char *_add_tile_config(cmd_parms *cmd,
 	// Set attribution to default
 	if (attribution_len == 0) {
 		attribution = apr_pstrdup(cmd->pool, DEFAULT_ATTRIBUTION);
+	} else {
+		attribution = apr_pstrndup(cmd->pool, attribution, PATH_MAX);
 	}
 
 	// Ensure URI string ends with a trailing slash
@@ -1999,11 +2035,15 @@ static const char *_add_tile_config(cmd_parms *cmd,
 		baseuri = apr_pstrdup(cmd->pool, "/");
 	} else if (baseuri[baseuri_len - 1] != '/') {
 		baseuri = apr_psprintf(cmd->pool, "%s/", baseuri);
+	} else {
+		baseuri = apr_pstrndup(cmd->pool, baseuri, PATH_MAX);
 	}
 
 	// If cors is empty, set it to NULL
 	if (cors_len == 0) {
 		cors = NULL;
+	} else {
+		cors = apr_pstrndup(cmd->pool, cors, PATH_MAX);
 	}
 
 	// If server_alias is set, increment hostnames_len
@@ -2014,6 +2054,8 @@ static const char *_add_tile_config(cmd_parms *cmd,
 	// Set tile_dir to default
 	if (tile_dir_len == 0) {
 		tile_dir = apr_pstrndup(cmd->pool, scfg->tile_dir, PATH_MAX);
+	} else {
+		tile_dir = apr_pstrndup(cmd->pool, tile_dir, PATH_MAX);
 	}
 
 	char **hostnames = (char **)apr_pcalloc(cmd->pool, sizeof(char *) * hostnames_len);
@@ -2048,16 +2090,16 @@ static const char *_add_tile_config(cmd_parms *cmd,
 	tilecfg->attribution = attribution;
 	tilecfg->baseuri = baseuri;
 	tilecfg->cors = cors;
-	tilecfg->description = description;
+	tilecfg->description = apr_pstrndup(cmd->pool, description, PATH_MAX);
 	tilecfg->enableOptions = enableOptions;
-	tilecfg->fileExtension = fileExtension;
+	tilecfg->fileExtension = apr_pstrndup(cmd->pool, fileExtension, PATH_MAX);
 	tilecfg->hostnames = hostnames;
 	tilecfg->maxzoom = maxzoom;
-	tilecfg->mimeType = mimeType;
+	tilecfg->mimeType = apr_pstrndup(cmd->pool, mimeType, PATH_MAX);
 	tilecfg->minzoom = minzoom;
 	tilecfg->noHostnames = hostnames_len;
 	tilecfg->store = tile_dir;
-	tilecfg->xmlname = name;
+	tilecfg->xmlname = apr_pstrndup(cmd->pool, name, PATH_MAX);
 
 	if (maxzoom > global_max_zoom) {
 		global_max_zoom = maxzoom;
@@ -2144,7 +2186,7 @@ static const char *load_tile_config(cmd_parms *cmd, void *mconfig, const char *c
 
 	xmlconfigitem maps[XMLCONFIGS_MAX];
 
-	process_map_sections(NULL, config_file_name, maps, "", 0);
+	process_map_sections(NULL, config_file_name, maps, RENDERD_TILE_DIR, 0);
 
 	for (int i = 0; i < XMLCONFIGS_MAX; i++) {
 		if (maps[i].xmlname != NULL) {
@@ -2158,6 +2200,8 @@ static const char *load_tile_config(cmd_parms *cmd, void *mconfig, const char *c
 			}
 		}
 	}
+
+	free_map_sections(maps);
 
 	return NULL;
 }
