@@ -272,12 +272,12 @@ jobs:
           memory: 4096
           ssh_shell: sh
 
-      # Mapnik is not in the `quarterly` repository (2023.10.12)
-      - name: Use "latest" repository
-        run: |
-          sudo mkdir -p /usr/local/etc/pkg/repos
-          sed 's#/quarterly#/latest#g' /etc/pkg/FreeBSD.conf | sudo tee /usr/local/etc/pkg/repos/FreeBSD.conf
-          sudo pkg upgrade --yes
+      ## In case Mapnik is not in the `quarterly` repository
+      # - name: Use "latest" repository
+      #   run: |
+      #     sudo mkdir -p /usr/local/etc/pkg/repos
+      #     sed 's#/quarterly#/latest#g' /etc/pkg/FreeBSD.conf | sudo tee /usr/local/etc/pkg/repos/FreeBSD.conf
+      #     sudo pkg upgrade --yes
 
       - name: Install dependencies
         uses: ./.github/actions/dependencies/install
