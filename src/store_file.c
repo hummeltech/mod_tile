@@ -266,24 +266,33 @@ static int file_metatile_expire(struct storage_backend * store, const char *xmlc
 
 	char name[PATH_MAX];
 	struct stat s;
-	static struct tm touchCalendar;
 	struct utimbuf touchTime;
+
+	// Define time thresholds in seconds
+	const time_t TWENTY_YEARS = 20LL * 365 * 24 * 60 * 60;
+	const time_t TEN_YEARS    = 10LL * 365 * 24 * 60 * 60;
+	const time_t FALLBACK_TIME = 315558000; // Jan 1, 1980 (mod_tile's original fallback)
 
 	//TODO: deal with options
 	xyz_to_meta(name, sizeof(name), store->storage_ctx, xmlconfig, x, y, z);
 
 	if (stat(name, &s) == 0) {// 0 is success
 		// tile exists on disk; mark it as expired
+		time_t now = time(NULL);
 
-		if (!gmtime_r(&(s.st_mtime), &touchCalendar)) {
-			touchTime.modtime = 315558000;
-		} else {
-			if (touchCalendar.tm_year > 105) { // Tile hasn't already been marked as expired
-				touchCalendar.tm_year -= 20; //Set back by 20 years, to keep the creation time as reference.
-				touchTime.modtime = mktime(&touchCalendar);
+		// If the file is newer than 10 years old, it hasn't been expired yet
+		if (now >= s.st_mtime && (now - s.st_mtime) < TEN_YEARS) {
+
+			// Prevent underflow on systems where time_t is signed and small
+			if (s.st_mtime > TWENTY_YEARS) {
+				touchTime.modtime = s.st_mtime - TWENTY_YEARS; // Keep relative creation time
 			} else {
-				touchTime.modtime = s.st_mtime;
+				touchTime.modtime = FALLBACK_TIME;
 			}
+
+		} else {
+			// Already marked as expired (or from the future), leave it alone
+			touchTime.modtime = s.st_mtime;
 		}
 
 		touchTime.actime = s.st_atime; // Don't modify atime, as that is used for tile cache purging
