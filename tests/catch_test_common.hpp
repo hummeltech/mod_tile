@@ -55,6 +55,7 @@ extern "C" {
 	int mocked_asprintf(char **strp, const char *fmt, ...);
 	int mocked_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 	int mocked_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
+	int mocked_getloadavg(double loadavg[], int nelem);
 	void *mocked_malloc(size_t size);
 	int mocked_mkdir(const char *path, mode_t mode);
 	int mocked_open(const char *pathname, int flags, ...);

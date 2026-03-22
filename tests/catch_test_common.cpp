@@ -44,6 +44,7 @@ bool fail_next_asprintf = false;
 bool fail_next_connect = false;
 bool fail_next_getaddrinfo = false;
 bool fail_next_getaddrinfo_empty_res = false;
+bool fail_next_getloadavg = false;
 bool fail_next_malloc = false;
 bool fail_next_mkdir = false;
 bool fail_next_open = false;
@@ -156,7 +157,6 @@ void start_capture(bool debug)
 		setenv("G_MESSAGES_DEBUG", "all", 1);
 #if GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION >= 79
 		// https://gitlab.gnome.org/GNOME/glib/-/merge_requests/3710
-		std::cout << "Resetting G_MESSAGES_DEBUG env var in runtime no longer has an effect.\n";
 		const gchar *domains[] = {"all", NULL};
 		g_log_writer_default_set_debug_domains(domains);
 #endif
@@ -170,6 +170,7 @@ std::tuple<std::string, std::string> end_capture(bool print)
 {
 	setenv("G_MESSAGES_DEBUG", "", 1);
 #if GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION >= 79
+	// https://gitlab.gnome.org/GNOME/glib/-/merge_requests/3710
 	g_log_writer_default_set_debug_domains(NULL);
 #endif
 	foreground = 0;
@@ -341,6 +342,16 @@ extern "C" {
 		}
 
 		return getaddrinfo(node, service, hints, res);
+	}
+
+	int mocked_getloadavg(double loadavg[], int nelem)
+	{
+		if (fail_next_getloadavg) {
+			fail_next_getloadavg = false;
+			return -1;
+		}
+
+		return getloadavg(loadavg, nelem);
 	}
 
 	void *mocked_malloc(size_t size)

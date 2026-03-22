@@ -327,4 +327,23 @@ target_compile_definitions(unit_test_renderd_config PRIVATE
 target_include_directories(unit_test_renderd_config PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
 target_link_libraries(unit_test_renderd_config ${unit_test_renderd_config_LIBS})
 
+
+#-----------------------------------------------------------------------------
+#
+#  unit_test_sys_utils
+#
+#-----------------------------------------------------------------------------
+
+set(unit_test_sys_utils_SRCS
+  $<TARGET_OBJECTS:catch_main_o>
+  ${PROJECT_SOURCE_DIR}/tests/unit_test_sys_utils.cpp
+)
+set(unit_test_sys_utils_LIBS
+  ${GLIB_LIBRARIES}
+)
+add_executable(unit_test_sys_utils ${unit_test_sys_utils_SRCS})
+set_target_properties(unit_test_sys_utils PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+target_include_directories(unit_test_sys_utils PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
+target_link_libraries(unit_test_sys_utils ${unit_test_sys_utils_LIBS})
+
 endif()

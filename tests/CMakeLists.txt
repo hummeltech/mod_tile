@@ -245,6 +245,11 @@ add_test(
   COMMAND unit_test_renderd_config
 )
 
+add_test(
+  NAME unit_test_sys_utils
+  COMMAND unit_test_sys_utils
+)
+
 foreach(STORAGE_BACKEND_INDEX RANGE ${STORAGE_BACKENDS_LENGTH})
   # Get STORAGE_BACKEND from STORAGE_BACKENDS list
   list(GET STORAGE_BACKENDS ${STORAGE_BACKEND_INDEX} STORAGE_BACKEND)
