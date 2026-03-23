@@ -223,142 +223,26 @@ target_link_libraries(gen_tile_test ${gen_tile_test_LIBS})
 
 #-----------------------------------------------------------------------------
 #
-#  unit_test_cache_expire
+#  unit_tests
 #
 #-----------------------------------------------------------------------------
 
-set(unit_test_cache_expire_SRCS
+set(unit_tests_SRCS
   $<TARGET_OBJECTS:catch_main_o>
-  ${PROJECT_SOURCE_DIR}/tests/unit_test_cache_expire.cpp
+  ${PROJECT_SOURCE_DIR}/tests/unit_tests.cpp
 )
-set(unit_test_cache_expire_LIBS
-  ${GLIB_LIBRARIES}
-)
-add_executable(unit_test_cache_expire ${unit_test_cache_expire_SRCS})
-set_target_properties(unit_test_cache_expire PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-target_include_directories(unit_test_cache_expire PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
-target_link_libraries(unit_test_cache_expire ${unit_test_cache_expire_LIBS})
-
-
-#-----------------------------------------------------------------------------
-#
-#  unit_test_metatile
-#
-#-----------------------------------------------------------------------------
-
-set(unit_test_metatile_SRCS
-  $<TARGET_OBJECTS:catch_main_o>
-  ${PROJECT_SOURCE_DIR}/tests/unit_test_metatile.cpp
-)
-set(unit_test_metatile_LIBS
-  ${GLIB_LIBRARIES}
-)
-add_executable(unit_test_metatile ${unit_test_metatile_SRCS})
-set_target_properties(unit_test_metatile PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-target_include_directories(unit_test_metatile PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
-target_link_libraries(unit_test_metatile ${unit_test_metatile_LIBS})
-
-
-#-----------------------------------------------------------------------------
-#
-#  unit_test_parameterize_style
-#
-#-----------------------------------------------------------------------------
-
-set(unit_test_parameterize_style_SRCS
-  $<TARGET_OBJECTS:catch_main_o>
-  ${PROJECT_SOURCE_DIR}/tests/unit_test_parameterize_style.cpp
-)
-set(unit_test_parameterize_style_LIBS
-  ${GLIB_LIBRARIES}
-  ${LIBMAPNIK_LIBRARIES}
-)
-add_executable(unit_test_parameterize_style ${unit_test_parameterize_style_SRCS})
-set_target_properties(unit_test_parameterize_style PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-target_compile_definitions(unit_test_parameterize_style PRIVATE
-  MAPNIK_XML="${PROJECT_SOURCE_DIR}/utils/example-map/mapnik.xml"
-)
-target_include_directories(unit_test_parameterize_style PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
-target_link_libraries(unit_test_parameterize_style ${unit_test_parameterize_style_LIBS})
-
-
-#-----------------------------------------------------------------------------
-#
-#  unit_test_protocol_helper
-#
-#-----------------------------------------------------------------------------
-
-set(unit_test_protocol_helper_SRCS
-  $<TARGET_OBJECTS:catch_main_o>
-  ${PROJECT_SOURCE_DIR}/tests/unit_test_protocol_helper.cpp
-)
-set(unit_test_protocol_helper_LIBS
-  ${GLIB_LIBRARIES}
-)
-add_executable(unit_test_protocol_helper ${unit_test_protocol_helper_SRCS})
-set_target_properties(unit_test_protocol_helper PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-target_include_directories(unit_test_protocol_helper PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
-target_link_libraries(unit_test_protocol_helper ${unit_test_protocol_helper_LIBS})
-
-
-#-----------------------------------------------------------------------------
-#
-#  unit_test_render_submit_queue
-#
-#-----------------------------------------------------------------------------
-
-set(unit_test_render_submit_queue_SRCS
-  $<TARGET_OBJECTS:catch_main_o>
-  ${PROJECT_SOURCE_DIR}/tests/unit_test_render_submit_queue.cpp
-)
-set(unit_test_render_submit_queue_LIBS
-  ${GLIB_LIBRARIES}
-)
-add_executable(unit_test_render_submit_queue ${unit_test_render_submit_queue_SRCS})
-set_target_properties(unit_test_render_submit_queue PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-target_include_directories(unit_test_render_submit_queue PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
-target_link_libraries(unit_test_render_submit_queue ${unit_test_render_submit_queue_LIBS})
-
-
-#-----------------------------------------------------------------------------
-#
-#  unit_test_renderd_config
-#
-#-----------------------------------------------------------------------------
-
-set(unit_test_renderd_config_SRCS
-  $<TARGET_OBJECTS:catch_main_o>
-  ${PROJECT_SOURCE_DIR}/tests/unit_test_renderd_config.cpp
-)
-set(unit_test_renderd_config_LIBS
+set(unit_tests_LIBS
   ${GLIB_LIBRARIES}
   ${INIPARSER_LIBRARIES}
+  ${LIBMAPNIK_LIBRARIES}
 )
-add_executable(unit_test_renderd_config ${unit_test_renderd_config_SRCS})
-set_target_properties(unit_test_renderd_config PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-target_compile_definitions(unit_test_renderd_config PRIVATE
+add_executable(unit_tests ${unit_tests_SRCS})
+set_target_properties(unit_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+target_compile_definitions(unit_tests PRIVATE
+  MAPNIK_XML="${PROJECT_SOURCE_DIR}/utils/example-map/mapnik.xml"
   RENDERD_CONF="${PROJECT_SOURCE_DIR}/etc/renderd/renderd.conf.examples"
 )
-target_include_directories(unit_test_renderd_config PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
-target_link_libraries(unit_test_renderd_config ${unit_test_renderd_config_LIBS})
-
-
-#-----------------------------------------------------------------------------
-#
-#  unit_test_sys_utils
-#
-#-----------------------------------------------------------------------------
-
-set(unit_test_sys_utils_SRCS
-  $<TARGET_OBJECTS:catch_main_o>
-  ${PROJECT_SOURCE_DIR}/tests/unit_test_sys_utils.cpp
-)
-set(unit_test_sys_utils_LIBS
-  ${GLIB_LIBRARIES}
-)
-add_executable(unit_test_sys_utils ${unit_test_sys_utils_SRCS})
-set_target_properties(unit_test_sys_utils PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-target_include_directories(unit_test_sys_utils PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
-target_link_libraries(unit_test_sys_utils ${unit_test_sys_utils_LIBS})
+target_include_directories(unit_tests PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
+target_link_libraries(unit_tests ${unit_tests_LIBS})
 
 endif()
