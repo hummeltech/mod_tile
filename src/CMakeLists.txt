@@ -294,15 +294,30 @@ set(unit_test_protocol_helper_SRCS
 )
 set(unit_test_protocol_helper_LIBS
   ${GLIB_LIBRARIES}
-  ${INIPARSER_LIBRARIES}
 )
 add_executable(unit_test_protocol_helper ${unit_test_protocol_helper_SRCS})
 set_target_properties(unit_test_protocol_helper PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-target_compile_definitions(unit_test_protocol_helper PRIVATE
-  RENDERD_CONF="${PROJECT_SOURCE_DIR}/etc/renderd/renderd.conf.examples"
-)
 target_include_directories(unit_test_protocol_helper PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
 target_link_libraries(unit_test_protocol_helper ${unit_test_protocol_helper_LIBS})
+
+
+#-----------------------------------------------------------------------------
+#
+#  unit_test_render_submit_queue
+#
+#-----------------------------------------------------------------------------
+
+set(unit_test_render_submit_queue_SRCS
+  $<TARGET_OBJECTS:catch_main_o>
+  ${PROJECT_SOURCE_DIR}/tests/unit_test_render_submit_queue.cpp
+)
+set(unit_test_render_submit_queue_LIBS
+  ${GLIB_LIBRARIES}
+)
+add_executable(unit_test_render_submit_queue ${unit_test_render_submit_queue_SRCS})
+set_target_properties(unit_test_render_submit_queue PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+target_include_directories(unit_test_render_submit_queue PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/tests)
+target_link_libraries(unit_test_render_submit_queue ${unit_test_render_submit_queue_LIBS})
 
 
 #-----------------------------------------------------------------------------

@@ -241,6 +241,11 @@ add_test(
 )
 
 add_test(
+  NAME unit_test_render_submit_queue
+  COMMAND unit_test_render_submit_queue
+)
+
+add_test(
   NAME unit_test_renderd_config
   COMMAND unit_test_renderd_config
 )

@@ -10,6 +10,7 @@
 extern bool fail_next_getloadavg;
 extern std::string err_log_lines;
 
+extern "C" {
 #define g_logger mocked_g_logger
 #define getloadavg mocked_getloadavg
 
@@ -17,6 +18,7 @@ extern std::string err_log_lines;
 
 #undef g_logger
 #undef getloadavg
+}
 
 TEST_CASE("get_load_avg function", "[get_load_avg]")
 {
