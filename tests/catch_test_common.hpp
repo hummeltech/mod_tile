@@ -59,6 +59,7 @@ extern "C" {
 	void *mocked_malloc(size_t size);
 	int mocked_mkdir(const char *path, mode_t mode);
 	int mocked_open(const char *pathname, int flags, ...);
+	ssize_t mocked_recv(int fd, void *buf, size_t n, int flags);
 	int mocked_socket(int domain, int type, int protocol) noexcept;
 	char *mocked_strndup(const char *s, size_t n);
 	char *mocked_strtok(char *s, const char *delim);

@@ -35,25 +35,10 @@
 #include "catch_test_common.hpp"
 #include "pstreams/pstream.hpp"
 
+#include "protocol.h"
+
 extern int foreground;
 
-int exit_status = 0;
-int mock_errno = 0;
-
-bool fail_next_asprintf = false;
-bool fail_next_connect = false;
-bool fail_next_getaddrinfo = false;
-bool fail_next_getaddrinfo_empty_res = false;
-bool fail_next_getloadavg = false;
-bool fail_next_malloc = false;
-bool fail_next_mkdir = false;
-bool fail_next_open = false;
-bool fail_next_socket = false;
-bool fail_next_strndup = false;
-bool fail_next_strtok = false;
-bool fail_next_write = false;
-
-jmp_buf exit_jump;
 std::string err_log_lines, out_log_lines;
 
 captured_stdio captured_stderr;
@@ -280,6 +265,29 @@ int delete_tile_dir(const std::string &tile_dir)
 }
 
 extern "C" {
+	int exit_status = 0;
+	int mock_errno = 0;
+
+	bool fail_next_asprintf = false;
+	bool fail_next_connect = false;
+	bool fail_next_getaddrinfo = false;
+	bool fail_next_getaddrinfo_empty_res = false;
+	bool fail_next_getloadavg = false;
+	bool fail_next_malloc = false;
+	bool fail_next_mkdir = false;
+	bool fail_next_open = false;
+	bool fail_next_recv = false;
+	bool fail_next_socket = false;
+	bool fail_next_strndup = false;
+	bool fail_next_strtok = false;
+	bool fail_next_write = false;
+	int fail_next_next_recv_reponse_size = -1;
+	int fail_next_next_recv_reponse_version = -1;
+	int fail_next_recv_reponse_size = -1;
+	int fail_next_recv_reponse_version = -1;
+
+	jmp_buf exit_jump;
+
 	void mocked_exit(int status)
 	{
 		exit_status = status;
@@ -387,6 +395,35 @@ extern "C" {
 		int result = open(pathname, flags, args);
 		va_end(args);
 		return result;
+	}
+
+	ssize_t mocked_recv(int fd, void *buf, size_t n, int flags)
+	{
+		if (fail_next_recv) {
+			fail_next_recv = false;
+			return -1;
+		}
+
+		if (fail_next_recv_reponse_size != -1) {
+			int reponse_size = fail_next_recv_reponse_size;
+			fail_next_recv_reponse_size = (fail_next_next_recv_reponse_size != -1) ? fail_next_next_recv_reponse_size : -1;
+			fail_next_next_recv_reponse_size = -1;
+
+			if (fail_next_recv_reponse_version != -1) {
+				struct protocol *cmd = (struct protocol *)malloc(sizeof(struct protocol));
+				cmd->ver = fail_next_recv_reponse_version;
+				fail_next_recv_reponse_version = (fail_next_next_recv_reponse_version != -1) ? fail_next_next_recv_reponse_version : -1;
+				fail_next_next_recv_reponse_version = -1;
+
+				memcpy(buf, cmd, reponse_size);
+
+				free(cmd);
+			}
+
+			return reponse_size;
+		}
+
+		return recv(fd, buf, n, flags);
 	}
 
 	int mocked_socket(int domain, int type, int protocol) noexcept

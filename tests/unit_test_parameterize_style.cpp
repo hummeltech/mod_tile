@@ -1,10 +1,26 @@
+#include <mapnik/datasource.hpp>
+#include <mapnik/datasource_cache.hpp>
+#include <mapnik/layer.hpp>
+#include <mapnik/load_map.hpp>
+#include <mapnik/map.hpp>
+#include <mapnik/params.hpp>
+
+#if MAPNIK_MAJOR_VERSION < 4
+#include <boost/optional/optional_io.hpp>
+#endif
+
 #include "catch/catch.hpp"
 #include "catch_test_common.hpp"
 
+#include "config.h"
+#include "parameterize_style.hpp"
+
+extern bool fail_next_strtok;
+extern std::string err_log_lines;
+
 TEST_CASE("parameterize_style.cpp", "[parameterize_style]")
 {
-	SECTION("parameterize_map_language function")
-	{
+	SECTION("parameterize_map_language function") {
 		const char * parameter = "en,de,_";
 		mapnik::datasource_cache::instance().register_datasources(MAPNIK_PLUGINS_DIR);
 		mapnik::Map map(256, 256);
@@ -39,8 +55,7 @@ TEST_CASE("parameterize_style.cpp", "[parameterize_style]")
 		}
 	}
 
-	SECTION("init_parameterization_function function")
-	{
+	SECTION("init_parameterization_function function") {
 		err_log_lines.clear();
 
 		SECTION("init_parameterization_function with empty function_name", "should return NULL") {

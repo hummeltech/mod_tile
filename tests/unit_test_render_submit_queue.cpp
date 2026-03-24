@@ -1,10 +1,20 @@
+#include <chrono>
+#include <csetjmp>
+
 #include "catch/catch.hpp"
 #include "catch_test_common.hpp"
 
+#include "render_submit_queue.h"
+
+extern bool fail_next_getloadavg;
+extern bool fail_next_socket;
+extern int exit_status;
+extern jmp_buf exit_jump;
+extern std::string err_log_lines;
+
 TEST_CASE("render_submit_queue.c", "[render_submit_queue]")
 {
-	SECTION("check_load function")
-	{
+	SECTION("check_load function") {
 		err_log_lines.clear();
 
 		maxLoad = 999;
@@ -21,8 +31,7 @@ TEST_CASE("render_submit_queue.c", "[render_submit_queue]")
 		}
 	}
 
-	SECTION("process function")
-	{
+	SECTION("process function") {
 		int fd, ret;
 		int pipefd[2];
 		pipe(pipefd);
@@ -41,8 +50,7 @@ TEST_CASE("render_submit_queue.c", "[render_submit_queue]")
 		}
 	}
 
-	SECTION("make_connection function")
-	{
+	SECTION("make_connection function") {
 		int ret;
 		std::string socket_path = std::string(P_tmpdir) + "/renderd.sock";
 

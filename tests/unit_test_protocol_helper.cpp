@@ -1,5 +1,16 @@
+#include <strings.h>
+
 #include "catch/catch.hpp"
 #include "catch_test_common.hpp"
+
+#include "protocol.h"
+#include "protocol_helper.h"
+
+extern int fail_next_next_recv_reponse_size;
+extern int fail_next_next_recv_reponse_version;
+extern int fail_next_recv_reponse_size;
+extern int fail_next_recv_reponse_version;
+extern std::string err_log_lines;
 
 TEST_CASE("protocol_helper.c", "[protocol_helper]")
 {
@@ -20,32 +31,15 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 	cmd->y = y;
 	cmd->z = z;
 
-	SECTION("send_cmd function")
-	{
-		fd = pipefd[1];
-
-		SECTION("send_cmd with invalid version", "should return -1") {
-			cmd->ver = GENERATE(0, 4);
-
-			ret = send_cmd(cmd, fd);
-
-			REQUIRE(ret == -1);
-			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to send render cmd with unknown protocol version " + std::to_string(cmd->ver)));
-		}
-
-		SECTION("send_cmd with invalid fd", "should return -1") {
-			cmd->ver = GENERATE(1, 2, 3);
-
-			ret = send_cmd(cmd, fd);
-
-			REQUIRE(ret == -1);
-			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to send render cmd on fd " + std::to_string(fd)));
-		}
-	}
-
-	SECTION("recv_cmd function")
-	{
+	SECTION("recv_cmd function") {
 		fd = pipefd[0];
+
+		SECTION("recv_cmd with invalid fd", "should return -1") {
+			ret = recv_cmd(&rsp, fd, block);
+
+			REQUIRE(ret == -1);
+			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to read cmd on fd " + std::to_string(fd)));
+		}
 
 		SECTION("recv_cmd with invalid version", "should return -1") {
 			fail_next_recv_reponse_size = sizeof(struct protocol);
@@ -56,13 +50,6 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 
 			REQUIRE(ret == -1);
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains(expected_message));
-		}
-
-		SECTION("recv_cmd with invalid fd", "should return -1") {
-			ret = recv_cmd(&rsp, fd, block);
-
-			REQUIRE(ret == -1);
-			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to read cmd on fd " + std::to_string(fd)));
 		}
 
 		SECTION("recv_cmd with incomplete response", "should return 0") {
@@ -160,6 +147,28 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 			REQUIRE(ret == expected_size);
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Got incoming request with protocol version " + std::to_string(expected_version)));
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Socket prematurely closed: " + std::to_string(fd)));
+		}
+	}
+
+	SECTION("send_cmd function") {
+		fd = pipefd[1];
+
+		SECTION("send_cmd with invalid version", "should return -1") {
+			cmd->ver = GENERATE(0, 4);
+
+			ret = send_cmd(cmd, fd);
+
+			REQUIRE(ret == -1);
+			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to send render cmd with unknown protocol version " + std::to_string(cmd->ver)));
+		}
+
+		SECTION("send_cmd with invalid fd", "should return -1") {
+			cmd->ver = GENERATE(1, 2, 3);
+
+			ret = send_cmd(cmd, fd);
+
+			REQUIRE(ret == -1);
+			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to send render cmd on fd " + std::to_string(fd)));
 		}
 	}
 
