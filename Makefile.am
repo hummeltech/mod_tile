@@ -31,7 +31,7 @@ noinst_PROGRAMS = \
 	render_list_test \
 	render_old_test \
 	render_speedtest_test \
-	unit_test_renderd_config
+	unit_tests
 
 man_MANS = \
 	docs/man/renderd.1 \
@@ -129,23 +129,23 @@ render_speedtest_test_SOURCES = \
 	tests/render_speedtest_test.cpp
 render_speedtest_test_LDADD = $(GLIB_LIBS) catch_main.o catch_test_common.o
 
-unit_test_renderd_config_SOURCES = \
-	tests/unit_test_renderd_config.cpp
-unit_test_renderd_config_CXXFLAGS = -Isrc
-unit_test_renderd_config_LDADD = $(GLIB_LIBS) $(INIPARSER_LDFLAGS) catch_main.o catch_test_common.o
+unit_tests_SOURCES = \
+	tests/unit_tests.cpp
+unit_tests_CXXFLAGS = -Isrc
+unit_tests_LDADD = $(GLIB_LIBS) $(INIPARSER_LDFLAGS) $(MAPNIK_LDFLAGS) $(PTHREAD_CFLAGS) catch_main.o catch_test_common.o
 
 CLEANFILES=*.slo mod_tile.la stderr.out src/*.slo src/*.lo src/.libs/* src/*.la
 
 COMMA=,
 
-test: gen_tile_test renderd_test render_expired_test render_list_test render_old_test render_speedtest_test unit_test_renderd_config
+test: gen_tile_test renderd_test render_expired_test render_list_test render_old_test render_speedtest_test unit_tests
 	./gen_tile_test
 	./renderd_test
 	./render_expired_test
 	./render_list_test
 	./render_old_test
 	./render_speedtest_test
-	./unit_test_renderd_config
+	./unit_tests
 
 all-local:
 	$(APXS) -c $(DEF_LDLIBS) $(AM_CFLAGS) \

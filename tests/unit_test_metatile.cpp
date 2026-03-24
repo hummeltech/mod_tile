@@ -1,6 +1,15 @@
 #include "catch/catch.hpp"
 #include "catch_test_common.hpp"
 
+#include "metatile.h"
+#include "store.h"
+
+extern bool fail_next_malloc;
+extern bool fail_next_mkdir;
+extern bool fail_next_open;
+extern bool fail_next_write;
+extern std::string err_log_lines;
+
 TEST_CASE("metatile.cpp", "[metatile]")
 {
 	int x = 1024;
@@ -16,8 +25,7 @@ TEST_CASE("metatile.cpp", "[metatile]")
 
 	metaTile tiles(xmlconfig.c_str(), "", x, y, z);
 
-	SECTION("metaTile::save function")
-	{
+	SECTION("metaTile::save function") {
 		tile_dir = create_tile_dir("mod_tile.unit_test_metatile");
 		store = init_storage_backend(tile_dir.c_str());
 
@@ -71,8 +79,7 @@ TEST_CASE("metatile.cpp", "[metatile]")
 	}
 
 
-	SECTION("metaTile::set function")
-	{
+	SECTION("metaTile::set function") {
 		err_log_lines.clear();
 
 		SECTION("metaTile::set", "then metaTile::get, then metaTile::clear, then metaTile::get") {
@@ -98,8 +105,7 @@ TEST_CASE("metatile.cpp", "[metatile]")
 	}
 
 
-	SECTION("metaTile::expire_tiles function")
-	{
+	SECTION("metaTile::expire_tiles function") {
 		err_log_lines.clear();
 
 		SECTION("metaTile::expire_tile", "should return") {
@@ -119,8 +125,7 @@ TEST_CASE("metatile.cpp", "[metatile]")
 	}
 
 
-	SECTION("metaTile::xyz_to_meta_offset function")
-	{
+	SECTION("metaTile::xyz_to_meta_offset function") {
 		err_log_lines.clear();
 
 		SECTION("metaTile::xyz_to_meta_offset", "should return") {

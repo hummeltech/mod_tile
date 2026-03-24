@@ -1,10 +1,14 @@
 #include "catch/catch.hpp"
 #include "catch_test_common.hpp"
 
+#include "sys_utils.h"
+
+extern bool fail_next_getloadavg;
+extern std::string err_log_lines;
+
 TEST_CASE("sys_utils.c", "[sys_utils]")
 {
-	SECTION("get_load_avg function")
-	{
+	SECTION("get_load_avg function") {
 		err_log_lines.clear();
 
 		SECTION("get_load_avg", "should return positive") {

@@ -1,27 +1,21 @@
+#include <csetjmp>
+#include <cstring>
+#include <fstream>
+
+#include "catch/catch.hpp"
+#include "catch_test_common.hpp"
+
 #include "renderd_config.h"
 
-#ifndef RENDERD_CONF
-#define RENDERD_CONF "./etc/renderd/renderd.conf.examples"
-#endif
-
-extern "C" {
-#define asprintf mocked_asprintf
-#define exit mocked_exit
-#define g_logger mocked_g_logger
-#define strndup mocked_strndup
-
-#include "renderd_config.c"
-
-#undef asprintf
-#undef exit
-#undef g_logger
-#undef strndup
-}
+extern bool fail_next_asprintf;
+extern bool fail_next_strndup;
+extern int exit_status;
+extern jmp_buf exit_jump;
+extern std::string err_log_lines;
 
 TEST_CASE("renderd_config.c", "[renderd_config]")
 {
-	SECTION("copy_string function")
-	{
+	SECTION("copy_string function") {
 		err_log_lines.clear();
 		exit_status = 0;
 
@@ -52,8 +46,7 @@ TEST_CASE("renderd_config.c", "[renderd_config]")
 		}
 	}
 
-	SECTION("name_with_section function")
-	{
+	SECTION("name_with_section function") {
 		err_log_lines.clear();
 		exit_status = 0;
 
@@ -119,8 +112,7 @@ TEST_CASE("renderd_config.c", "[renderd_config]")
 		}
 	}
 
-	SECTION("min_max_double_opt & min_max_int_opt functions")
-	{
+	SECTION("min_max_double_opt & min_max_int_opt functions") {
 		const char *opt_type_name = "value";
 		double dmax = 1.15;
 		double dmin = 1.10;
@@ -242,8 +234,7 @@ TEST_CASE("renderd_config.c", "[renderd_config]")
 		}
 	}
 
-	SECTION("renderd.conf file processing functions")
-	{
+	SECTION("renderd.conf file processing functions") {
 		err_log_lines.clear();
 		exit_status = 0;
 
@@ -732,8 +723,7 @@ TEST_CASE("renderd_config.c", "[renderd_config]")
 		std::remove(renderd_conf_path.c_str());
 	}
 
-	SECTION("process_config_bool, process_config_double, process_config_int & process_config_string functions")
-	{
+	SECTION("process_config_bool, process_config_double, process_config_int & process_config_string functions") {
 		dictionary *ini = iniparser_load(RENDERD_CONF);
 		std::string section = "section";
 		std::string name = "name";
@@ -799,8 +789,7 @@ TEST_CASE("renderd_config.c", "[renderd_config]")
 		iniparser_freedict(ini);
 	}
 
-	SECTION("free_map_section, free_map_sections, free_renderd_section & free_renderd_sections functions")
-	{
+	SECTION("free_map_section, free_map_sections, free_renderd_section & free_renderd_sections functions") {
 		int active_renderd_section_num = 0;
 		int map_section_num = 0;
 

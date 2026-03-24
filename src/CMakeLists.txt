@@ -232,7 +232,7 @@ set(unit_tests_SRCS
   ${PROJECT_SOURCE_DIR}/tests/unit_tests.cpp
 )
 set(unit_tests_LIBS
-  ${GLIB_LIBRARIES}
+  ${COMMON_LIBRARIES}
   ${INIPARSER_LIBRARIES}
   ${LIBMAPNIK_LIBRARIES}
 )
