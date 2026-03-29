@@ -2009,6 +2009,8 @@ static const char *_add_tile_config(cmd_parms *cmd,
 	// Set attribution to default
 	if (attribution_len == 0) {
 		attribution = apr_pstrdup(cmd->pool, DEFAULT_ATTRIBUTION);
+	} else {
+		attribution = apr_pstrndup(cmd->pool, attribution, PATH_MAX);
 	}
 
 	// Ensure URI string ends with a trailing slash
@@ -2016,11 +2018,15 @@ static const char *_add_tile_config(cmd_parms *cmd,
 		baseuri = apr_pstrdup(cmd->pool, "/");
 	} else if (baseuri[baseuri_len - 1] != '/') {
 		baseuri = apr_psprintf(cmd->pool, "%s/", baseuri);
+	} else {
+		baseuri = apr_pstrndup(cmd->pool, baseuri, PATH_MAX);
 	}
 
 	// If cors is empty, set it to NULL
 	if (cors_len == 0) {
 		cors = NULL;
+	} else {
+		cors = apr_pstrndup(cmd->pool, cors, PATH_MAX);
 	}
 
 	// If server_alias is set, increment hostnames_len
@@ -2031,6 +2037,8 @@ static const char *_add_tile_config(cmd_parms *cmd,
 	// Set tile_dir to default
 	if (tile_dir_len == 0) {
 		tile_dir = apr_pstrndup(cmd->pool, scfg->tile_dir, PATH_MAX);
+	} else {
+		tile_dir = apr_pstrndup(cmd->pool, tile_dir, PATH_MAX);
 	}
 
 	char **hostnames = (char **)apr_pcalloc(cmd->pool, sizeof(char *) * hostnames_len);
@@ -2065,16 +2073,16 @@ static const char *_add_tile_config(cmd_parms *cmd,
 	tilecfg->attribution = attribution;
 	tilecfg->baseuri = baseuri;
 	tilecfg->cors = cors;
-	tilecfg->description = description;
+	tilecfg->description = apr_pstrndup(cmd->pool, description, PATH_MAX);
 	tilecfg->enableOptions = enableOptions;
-	tilecfg->fileExtension = fileExtension;
+	tilecfg->fileExtension = apr_pstrndup(cmd->pool, fileExtension, PATH_MAX);
 	tilecfg->hostnames = hostnames;
 	tilecfg->maxzoom = maxzoom;
-	tilecfg->mimeType = mimeType;
+	tilecfg->mimeType = apr_pstrndup(cmd->pool, mimeType, PATH_MAX);
 	tilecfg->minzoom = minzoom;
 	tilecfg->noHostnames = hostnames_len;
 	tilecfg->store = tile_dir;
-	tilecfg->xmlname = name;
+	tilecfg->xmlname = apr_pstrndup(cmd->pool, name, PATH_MAX);
 
 	if (maxzoom > global_max_zoom) {
 		global_max_zoom = maxzoom;
@@ -2161,7 +2169,7 @@ static const char *load_tile_config(cmd_parms *cmd, void *mconfig, const char *c
 
 	xmlconfigitem maps[XMLCONFIGS_MAX];
 
-	process_map_sections(NULL, config_file_name, maps, "", 0);
+	process_map_sections(NULL, config_file_name, maps, RENDERD_TILE_DIR, 0);
 
 	for (int i = 0; i < XMLCONFIGS_MAX; i++) {
 		if (maps[i].xmlname != NULL) {
@@ -2175,6 +2183,8 @@ static const char *load_tile_config(cmd_parms *cmd, void *mconfig, const char *c
 			}
 		}
 	}
+
+	free_map_sections(maps);
 
 	return NULL;
 }
