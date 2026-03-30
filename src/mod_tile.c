@@ -95,6 +95,9 @@ struct storage_backends {
 };
 
 static int error_message(request_rec *r, const char *format, ...)
+__attribute__((format(printf, 2, 3)));
+
+static int error_message(request_rec *r, const char *format, ...)
 {
 	va_list ap;
 	char *msg;

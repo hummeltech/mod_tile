@@ -212,7 +212,6 @@ set(gen_tile_test_SRCS
 )
 set(gen_tile_test_LIBS
   ${renderd_LIBS}
-  ${STORE_LIBRARIES}
 )
 add_executable(gen_tile_test ${gen_tile_test_SRCS})
 set_target_properties(gen_tile_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
