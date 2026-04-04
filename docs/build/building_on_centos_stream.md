@@ -33,7 +33,7 @@ sudo dnf --assumeyes --setopt=install_weak_deps=False install \
   cmake \
   gcc \
   gcc-c++ \
-  gdal \
+  gdal3.4 \
   git \
   glib2-devel \
   harfbuzz-devel \

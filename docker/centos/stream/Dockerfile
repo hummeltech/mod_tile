@@ -36,7 +36,7 @@ RUN --mount=type=cache,sharing=locked,id=centos:stream${centos_stream_version}-/
         freetype-devel \
         gcc \
         gcc-c++ \
-        gdal-devel \
+        gdal3.4-devel \
         git \
         harfbuzz-devel \
         libicu-devel \
@@ -94,7 +94,7 @@ RUN --mount=type=cache,sharing=locked,id=centos:stream${centos_stream_version}-/
         freetype-devel \
         gcc \
         gcc-c++ \
-        gdal \
+        gdal3.4 \
         glib2-devel \
         harfbuzz-devel \
         httpd-devel \
@@ -145,7 +145,7 @@ RUN --mount=type=cache,sharing=locked,id=centos:stream${centos_stream_version}-/
     dnf --assumeyes install \
         boost-regex \
         cairo \
-        gdal \
+        gdal3.4 \
         harfbuzz \
         httpd \
         iniparser \
