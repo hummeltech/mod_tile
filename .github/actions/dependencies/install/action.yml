@@ -70,6 +70,7 @@ inputs:
       jq
       lcov
       memcached
+      unzip
   fedora-build-dependencies:
     default: >-
       cairo-devel
@@ -198,6 +199,7 @@ inputs:
       jq
       lcov
       memcached
+      unzip
   mapnik-build-version-centos-stream:
     default: 4.0.3
   mapnik-build-version-opensuse:
