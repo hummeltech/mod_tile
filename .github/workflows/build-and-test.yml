@@ -301,7 +301,6 @@ jobs:
   OpenBSD:
     env:
       INSTALL_PREFIX: /usr/local
-      TMPDIR: /tmp
     name: >-
       OpenBSD
       ${{ matrix.openbsd_release }}
@@ -311,7 +310,7 @@ jobs:
     strategy:
       matrix:
         openbsd_release:
-          - 7.9-enlightenment
+          - "8.0"
         build_system:
           - CMake
         compiler:
@@ -332,7 +331,7 @@ jobs:
           cpu: ${{ env.BUILD_PARALLEL_LEVEL }}
           mem: 4096
           os: openbsd
-          provision-commands: pkg_add -Iv bash curl rsync-- sudo--;
+          provision-commands: pkg_add -Iv bash rsync-- sudo--;
           release: ${{ matrix.openbsd_release }}
 
       - name: Install dependencies

@@ -109,6 +109,8 @@ struct xmlmapconfig {
 	xmlmapconfig() : map(256, 256) {}
 };
 
+static pthread_mutex_t map_load_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 struct projectionconfig *get_projection(const char *srs)
 {
 	struct projectionconfig *prj;
@@ -341,6 +343,7 @@ void *render_thread(void *arg)
 			maps[iMaxConfigs].map.resize(RENDER_SIZE, RENDER_SIZE);
 
 			try {
+				pthread_mutex_lock(&map_load_mutex);
 				mapnik::load_map(maps[iMaxConfigs].map, maps[iMaxConfigs].xmlfile);
 
 				if (!maps[iMaxConfigs].parameterize_function) {
@@ -356,10 +359,14 @@ void *render_thread(void *arg)
 				}
 
 				maps[iMaxConfigs].prj = get_projection(maps[iMaxConfigs].map.srs().c_str());
+
+				pthread_mutex_unlock(&map_load_mutex);
 			} catch (std::exception const &ex) {
+				pthread_mutex_unlock(&map_load_mutex);
 				g_logger(G_LOG_LEVEL_ERROR, "An error occurred while loading the map layer '%s': %s", maps[iMaxConfigs].xmlname, ex.what());
 				maps[iMaxConfigs].ok = 0;
 			} catch (...) {
+				pthread_mutex_unlock(&map_load_mutex);
 				g_logger(G_LOG_LEVEL_ERROR, "An unknown error occurred while loading the map layer '%s'", maps[iMaxConfigs].xmlname);
 				maps[iMaxConfigs].ok = 0;
 			}

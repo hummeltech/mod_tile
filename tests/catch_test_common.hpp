@@ -31,8 +31,7 @@ typedef struct _captured_stdio {
 	int pipes[2];
 } captured_stdio;
 
-std::string read_stderr(int buffer_size = 16384);
-std::string read_stdout(int buffer_size = 16384);
+std::string read_and_close_pipe(int fd, int buffer_size = 4096);
 
 void capture_stderr();
 void capture_stdout();

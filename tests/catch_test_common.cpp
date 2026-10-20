@@ -23,8 +23,8 @@
 #include <iostream>
 #include <netdb.h>
 #include <setjmp.h>
+#include <signal.h>
 #include <stdio.h>
-#include <stdexcept>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
@@ -45,22 +45,27 @@ std::string err_log_lines, out_log_lines;
 captured_stdio captured_stderr;
 captured_stdio captured_stdout;
 
-std::string read_stderr(int buffer_size)
+std::string read_and_close_pipe(int fd, int buffer_size)
 {
-	std::string buffer(buffer_size, '\0');
-	ssize_t len = read(captured_stderr.pipes[0], &buffer[0], buffer_size);
-	// Stop at the terminating zero written by get_captured_stderr()
-	buffer.resize(len > 0 ? strnlen(buffer.c_str(), len) : 0);
-	return buffer;
-}
+	std::string result;
+	char buffer[buffer_size];
+	ssize_t bytes_read;
 
-std::string read_stdout(int buffer_size)
-{
-	std::string buffer(buffer_size, '\0');
-	ssize_t len = read(captured_stdout.pipes[0], &buffer[0], buffer_size);
-	// Stop at the terminating zero written by get_captured_stdout()
-	buffer.resize(len > 0 ? strnlen(buffer.c_str(), len) : 0);
-	return buffer;
+	while ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0) {
+		// Construct string using exact byte count (avoids null-termination bugs)
+		result.append(buffer, static_cast<size_t>(bytes_read));
+		// If we hit the null character sent by get_captured_*, stop reading
+		if (buffer[bytes_read - 1] == '\0') {
+			// Strip trailing null byte from returned std::string
+			if (!result.empty() && result.back() == '\0') {
+				result.pop_back();
+			}
+			break;
+		}
+	}
+
+	close(fd);
+	return result;
 }
 
 void capture_stderr()
@@ -69,21 +74,23 @@ void capture_stderr()
 	fflush(stderr);
 
 	// Save stderr so it can be restored later
-	int temp_stderr;
-	temp_stderr = dup(fileno(stderr));
+	int temp_stderr = dup(fileno(stderr));
 
 	// Redirect stderr to a new pipe
 	int pipes[2];
-
-	if (pipe(pipes) != 0) {
-		throw std::runtime_error("capture: pipe() failed");
+	if (pipe(pipes) < 0) {
+		perror("pipe failed");
+		return;
 	}
 
+	// Redirect stderr to pipe write end
 	dup2(pipes[1], fileno(stderr));
+	// Close write pipe original fd since stderr now points to it
+	close(pipes[1]);
 
 	captured_stderr.temp_fd = temp_stderr;
 	captured_stderr.pipes[0] = pipes[0];
-	captured_stderr.pipes[1] = pipes[1];
+	captured_stderr.pipes[1] = -1; // No longer needed
 }
 
 void capture_stdout()
@@ -92,36 +99,34 @@ void capture_stdout()
 	fflush(stdout);
 
 	// Save stdout so it can be restored later
-	int temp_stdout;
-	temp_stdout = dup(fileno(stdout));
+	int temp_stdout = dup(fileno(stdout));
 
 	// Redirect stdout to a new pipe
 	int pipes[2];
-
-	if (pipe(pipes) != 0) {
-		throw std::runtime_error("capture: pipe() failed");
+	if (pipe(pipes) < 0) {
+		perror("pipe failed");
+		return;
 	}
 
 	dup2(pipes[1], fileno(stdout));
+	close(pipes[1]);
 
 	captured_stdout.temp_fd = temp_stdout;
 	captured_stdout.pipes[0] = pipes[0];
-	captured_stdout.pipes[1] = pipes[1];
+	captured_stdout.pipes[1] = -1;
 }
 
 std::string get_captured_stderr(bool print)
 {
-	// Terminate captured output with a zero
-	if (write(captured_stderr.pipes[1], "", 1) != 1) {
-		throw std::runtime_error("capture: write() failed");
-	}
-
-	// Restore stderr
+	// Flush remaining buffered stderr before restoring
 	fflush(stderr);
-	dup2(captured_stderr.temp_fd, fileno(stderr));
 
-	// Save & return the captured stderr
-	std::string log_lines = read_stderr();
+	// Restore original stderr file descriptor
+	dup2(captured_stderr.temp_fd, fileno(stderr));
+	close(captured_stderr.temp_fd);
+
+	// Read all captured output and close the read end of the pipe
+	std::string log_lines = read_and_close_pipe(captured_stderr.pipes[0]);
 
 	if (print) {
 		std::cout << "err_log_lines: " << log_lines << "\n";
@@ -132,17 +137,12 @@ std::string get_captured_stderr(bool print)
 
 std::string get_captured_stdout(bool print)
 {
-	// Terminate captured output with a zero
-	if (write(captured_stdout.pipes[1], "", 1) != 1) {
-		throw std::runtime_error("capture: write() failed");
-	}
-
-	// Restore stdout
 	fflush(stdout);
-	dup2(captured_stdout.temp_fd, fileno(stdout));
 
-	// Save & return the captured stdout
-	std::string log_lines = read_stdout();
+	dup2(captured_stdout.temp_fd, fileno(stdout));
+	close(captured_stdout.temp_fd);
+
+	std::string log_lines = read_and_close_pipe(captured_stdout.pipes[0]);
 
 	if (print) {
 		std::cout << "out_log_lines: " << log_lines << "\n";
@@ -153,6 +153,9 @@ std::string get_captured_stdout(bool print)
 
 void start_capture(bool debug)
 {
+	// Suppress SIGPIPE signal globally for tests
+	signal(SIGPIPE, SIG_IGN);
+
 	foreground = debug ? 1 : 0;
 
 	if (debug) {
@@ -322,13 +325,9 @@ extern "C" {
 
 		va_start(args, format);
 
-		int len = vasprintf(&log_message, format, args);
+		vasprintf(&log_message, format, args);
 
 		va_end(args);
-
-		if (len < 0) {
-			throw std::runtime_error("mocked_g_logger: vasprintf() failed");
-		}
 
 		err_log_lines.append(log_message);
 		err_log_lines.append("\n");

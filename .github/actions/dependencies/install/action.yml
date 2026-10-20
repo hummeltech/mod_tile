@@ -135,6 +135,7 @@ inputs:
       mapnik
   openbsd-test-dependencies:
     default: >-
+      curl
       jq
   opensuse-build-dependencies:
     default: >-
