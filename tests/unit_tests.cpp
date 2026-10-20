@@ -2,7 +2,6 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "catch/catch.hpp"
 #include "catch_test_common.hpp"
 
 #include "config.h"
@@ -36,6 +35,18 @@
 #define write mocked_write
 
 extern "C" {
+#if defined(__OpenBSD__)
+#include <iniparser.h>
+// Force legacy C signatures to accept const pointers during C++ compilation
+#define iniparser_getboolean(d, k, f) iniparser_getboolean(const_cast<dictionary *>(d), k, f)
+#define iniparser_getdouble(d, k, f) iniparser_getdouble(const_cast<dictionary *>(d), k, f)
+#define iniparser_getint(d, k, f) iniparser_getint(const_cast<dictionary *>(d), k, f)
+#define iniparser_getstring(d, k, f) iniparser_getstring(const_cast<dictionary *>(d), k, const_cast<char *>(f))
+
+#define iniparser_getnsec(d) iniparser_getnsec(const_cast<dictionary *>(d))
+#define iniparser_getsecname(d, n) iniparser_getsecname(const_cast<dictionary *>(d), n)
+#endif
+
 #include "cache_expire.c"
 #include "protocol_helper.c"
 #include "render_submit_queue.c"
@@ -44,11 +55,11 @@ extern "C" {
 #include "store_file_utils.c"
 #include "sys_utils.c"
 
-	struct storage_backend * init_storage_backend(const char * options)
-	{
-		struct storage_backend * store = init_storage_file(options);
-		return store;
-	}
+struct storage_backend *init_storage_backend(const char *options)
+{
+	struct storage_backend *store = init_storage_file(options);
+	return store;
+}
 }
 
 #include "metatile.cpp"

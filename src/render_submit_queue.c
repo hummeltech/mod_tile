@@ -266,11 +266,7 @@ int make_connection(const char *spath)
 			hostname = strdup(RENDERD_HOST);
 		} else {
 			hostname = strndup(spath, hostname_len);
-		}
-
-		if (!hostname) {
-			g_logger(G_LOG_LEVEL_CRITICAL, "Error duplicating hostname: %s", strerror(errno));
-			exit(2);
+			assert(hostname != NULL);
 		}
 
 		if (d) {

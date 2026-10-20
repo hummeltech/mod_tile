@@ -300,10 +300,7 @@ jobs:
 
   OpenBSD:
     env:
-      CTEST_CLIENT_HOST: ::1
-      CTEST_SERVER_HOST: localhost
       INSTALL_PREFIX: /usr/local
-      LIBRARY_PATH: /usr/local/lib
       TMPDIR: /tmp
     name: >-
       OpenBSD
@@ -314,7 +311,7 @@ jobs:
     strategy:
       matrix:
         openbsd_release:
-          - 7.9
+          - 7.9-enlightenment
         build_system:
           - CMake
         compiler:
@@ -335,14 +332,8 @@ jobs:
           cpu: ${{ env.BUILD_PARALLEL_LEVEL }}
           mem: 4096
           os: openbsd
-          provision-commands: pkg install --yes bash rsync sudo;
+          provision-commands: pkg_add -Iv bash curl rsync-- sudo--;
           release: ${{ matrix.openbsd_release }}
-
-      - name: Install X Windows
-        run: |
-          curl -L https://cdn.openbsd.org/pub/OpenBSD/$(uname -r)/amd64/xbase$(uname -r | sed 's/\.//').tgz | sudo tar -C / -xzvf -
-          curl -L https://cdn.openbsd.org/pub/OpenBSD/$(uname -r)/amd64/xfont$(uname -r | sed 's/\.//').tgz | sudo tar -C / -xzvf -
-          sudo ldconfig /usr/*/lib
 
       - name: Install dependencies
         uses: ./.github/actions/dependencies/install

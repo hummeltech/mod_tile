@@ -122,7 +122,7 @@ enum protoCmd rx_request(struct protocol *req, int fd)
 
 	// Upgrade version 1 and 2 to  version 3
 	if (req->ver == 1) {
-		strncpy(req->xmlname, "default", sizeof(req->xmlname));
+		strcpy(req->xmlname, XMLCONFIG_DEFAULT);
 	}
 
 	if (req->ver < 3) {
@@ -996,7 +996,7 @@ int main(int argc, char **argv)
 
 	unlink(config->socketname);
 	free_map_sections(maps);
-	free_renderd_section(config_slaves[active_renderd_section_num]);
+	free_renderd_sections(config_slaves);
 	close(fd);
 	return 0;
 }

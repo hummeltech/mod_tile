@@ -39,7 +39,7 @@ find_program(TOUCH_EXECUTABLE NAMES gtouch touch REQUIRED)
 if(DEFINED ENV{CTEST_SERVER_HOST})
   # To the value of environment variable "CTEST_SERVER_HOST"
   set(CTEST_SERVER_HOST "$ENV{CTEST_SERVER_HOST}")
-elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD|OpenBSD")
   # To localhost on FreeBSD
   set(CTEST_SERVER_HOST "localhost")
 else()

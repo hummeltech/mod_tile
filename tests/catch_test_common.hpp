@@ -26,9 +26,6 @@
 #ifndef CATCH_TEST_COMMON_HPP
 #define CATCH_TEST_COMMON_HPP
 
-#include <string>
-#include <vector>
-
 typedef struct _captured_stdio {
 	int temp_fd;
 	int pipes[2];

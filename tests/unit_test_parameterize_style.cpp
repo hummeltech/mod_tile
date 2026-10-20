@@ -15,6 +15,8 @@
 #include "config.h"
 #include "parameterize_style.hpp"
 
+static void parameterize_map_language(mapnik::Map &m, char *parameter);
+
 extern std::string err_log_lines;
 
 TEST_CASE("parameterize_style.cpp", "[parameterize_style]")

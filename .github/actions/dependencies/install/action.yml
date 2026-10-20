@@ -127,12 +127,12 @@ inputs:
       memcached
   openbsd-build-dependencies:
     default: >-
+      pcre2--
       apache-httpd
       coreutils
       glib2
       iniparser
       mapnik
-      pkgconf
   openbsd-test-dependencies:
     default: >-
       jq

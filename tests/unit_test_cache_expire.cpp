@@ -3,6 +3,10 @@
 
 #include "cache_expire.h"
 
+extern "C" {
+static void cache_expire_url(int sock, char *url);
+}
+
 extern bool fail_next_connect;
 extern bool fail_next_getaddrinfo;
 extern bool fail_next_getaddrinfo_empty_res;
@@ -93,6 +97,8 @@ TEST_CASE("cache_expire.c", "[cache_expire]")
 				     ||
 				     Catch::Matchers::Contains("Failed to lookup HTCP cache host: Name or service not known")
 				     ||
+				     Catch::Matchers::Contains("Failed to lookup HTCP cache host: no address associated with name")
+				     ||
 				     Catch::Matchers::Contains("Failed to lookup HTCP cache host: Temporary failure in name resolution")
 				     ||
 				     Catch::Matchers::Contains("Failed to lookup HTCP cache host: nodename nor servname provided, or not known")
@@ -116,6 +122,8 @@ TEST_CASE("cache_expire.c", "[cache_expire]")
 			init_cache_expire((char *)htcphost.c_str());
 			REQUIRE_THAT(err_log_lines,
 				     Catch::Matchers::Contains("Failed to lookup HTCP cache host: Bad value for ai_flags")
+				     ||
+				     Catch::Matchers::Contains("Failed to lookup HTCP cache host: invalid value for ai_flags")
 				     ||
 				     Catch::Matchers::Contains("Failed to lookup HTCP cache host: Unknown error")
 				    );
