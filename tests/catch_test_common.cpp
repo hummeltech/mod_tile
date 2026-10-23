@@ -23,8 +23,8 @@
 #include <iostream>
 #include <netdb.h>
 #include <setjmp.h>
-#include <stdio.h>
 #include <stdexcept>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
@@ -262,7 +262,7 @@ int remove_recursive(const char *path)
 		result = remove_recursive(sub_path);
 
 		if (result != 0) {
-			break;        // Stop early on error
+			break; // Stop early on error
 		}
 	}
 
@@ -286,6 +286,7 @@ extern "C" {
 	int mock_errno = 0;
 
 	bool fail_next_asprintf = false;
+	bool fail_next_calloc = false;
 	bool fail_next_connect = false;
 	bool fail_next_getaddrinfo = false;
 	bool fail_next_getaddrinfo_empty_res = false;
@@ -293,6 +294,7 @@ extern "C" {
 	bool fail_next_malloc = false;
 	bool fail_next_mkdir = false;
 	bool fail_next_open = false;
+	bool fail_next_pthread_create = false;
 	bool fail_next_recv = false;
 	bool fail_next_socket = false;
 	bool fail_next_strndup = false;
@@ -306,6 +308,8 @@ extern "C" {
 	int fail_next_recv_reponse_cmd = -1;
 	int fail_next_recv_reponse_size = -1;
 	int fail_next_recv_reponse_version = -1;
+
+	int pass_next_connect = false;
 
 	jmp_buf exit_jump;
 
@@ -356,11 +360,28 @@ extern "C" {
 		return result;
 	}
 
+	void *mocked_calloc(size_t num, size_t size)
+	{
+		if (fail_next_calloc) {
+			fail_next_calloc = false;
+			errno = (mock_errno != 0) ? mock_errno : ENOMEM;
+			return nullptr;
+		}
+
+		return calloc(num, size);
+	}
+
 	int mocked_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 	{
 		if (fail_next_connect) {
 			fail_next_connect = false;
+			errno = (mock_errno != 0) ? mock_errno : EACCES;
 			return -1;
+		}
+
+		if (pass_next_connect) {
+			pass_next_connect = false;
+			return 0;
 		}
 
 		return connect(sockfd, addr, addrlen);
@@ -396,6 +417,7 @@ extern "C" {
 	{
 		if (fail_next_malloc) {
 			fail_next_malloc = false;
+			errno = (mock_errno != 0) ? mock_errno : ENOMEM;
 			return nullptr;
 		}
 
@@ -425,6 +447,15 @@ extern "C" {
 		int result = open(pathname, flags, args);
 		va_end(args);
 		return result;
+	}
+
+	int mocked_pthread_create(pthread_t *__restrict newthread, const pthread_attr_t *__restrict attr, void *(*start_routine)(void *), void *__restrict arg)
+	{
+		if (fail_next_pthread_create) {
+			fail_next_pthread_create = false;
+			return (mock_errno != 0) ? mock_errno : EAGAIN;
+		}
+		return pthread_create(newthread, attr, start_routine, arg);
 	}
 
 	ssize_t mocked_recv(int fd, void *buf, size_t n, int flags)

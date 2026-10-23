@@ -31,17 +31,20 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 	cmd->y = y;
 	cmd->z = z;
 
-	SECTION("recv_cmd function") {
+	SECTION("recv_cmd function")
+	{
 		fd = pipefd[0];
 
-		SECTION("recv_cmd with invalid fd", "should return -1") {
+		SECTION("recv_cmd with invalid fd", "should return -1")
+		{
 			ret = recv_cmd(&rsp, fd, block);
 
 			REQUIRE(ret == -1);
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to read cmd on fd " + std::to_string(fd)));
 		}
 
-		SECTION("recv_cmd with invalid version", "should return -1") {
+		SECTION("recv_cmd with invalid version", "should return -1")
+		{
 			fail_next_recv_reponse_size = sizeof(struct protocol);
 			fail_next_recv_reponse_version = GENERATE(0, 4);
 			std::string expected_message = "Failed to receive render cmd with unknown protocol version " + std::to_string(fail_next_recv_reponse_version);
@@ -52,7 +55,8 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains(expected_message));
 		}
 
-		SECTION("recv_cmd with incomplete response", "should return 0") {
+		SECTION("recv_cmd with incomplete response", "should return 0")
+		{
 			fail_next_recv_reponse_size = 1;
 
 			ret = recv_cmd(&rsp, fd, block);
@@ -61,7 +65,8 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Read incomplete cmd on fd " + std::to_string(fd)));
 		}
 
-		SECTION("recv_cmd with invalid version and correct size response", "should return -1") {
+		SECTION("recv_cmd with invalid version and correct size response", "should return -1")
+		{
 			fail_next_recv_reponse_size = GENERATE(sizeof(struct protocol_v1), sizeof(struct protocol_v2), sizeof(struct protocol));
 			fail_next_recv_reponse_version = GENERATE(0, 4);
 
@@ -74,7 +79,8 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to receive render cmd with unknown protocol version " + std::to_string(expected_version)));
 		}
 
-		SECTION("recv_cmd with correct size response (v1)", "should return") {
+		SECTION("recv_cmd with correct size response (v1)", "should return")
+		{
 			fail_next_recv_reponse_size = sizeof(struct protocol_v1);
 			fail_next_recv_reponse_version = 1;
 
@@ -87,7 +93,8 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Got incoming request with protocol version " + std::to_string(expected_version)));
 		}
 
-		SECTION("recv_cmd with correct size response (v2)", "should return") {
+		SECTION("recv_cmd with correct size response (v2)", "should return")
+		{
 			fail_next_recv_reponse_size = sizeof(struct protocol_v1);
 			fail_next_recv_reponse_version = 2;
 			fail_next_next_recv_reponse_size = sizeof(struct protocol_v2) - fail_next_recv_reponse_size;
@@ -102,7 +109,8 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Got incoming request with protocol version " + std::to_string(expected_version)));
 		}
 
-		SECTION("recv_cmd with correct size response (v3)", "should return") {
+		SECTION("recv_cmd with correct size response (v3)", "should return")
+		{
 			fail_next_recv_reponse_size = sizeof(struct protocol_v1);
 			fail_next_recv_reponse_version = 3;
 			fail_next_next_recv_reponse_size = sizeof(struct protocol) - fail_next_recv_reponse_size;
@@ -117,7 +125,8 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Got incoming request with protocol version " + std::to_string(expected_version)));
 		}
 
-		SECTION("recv_cmd with incorrect size response (v2-v3)", "should return") {
+		SECTION("recv_cmd with incorrect size response (v2-v3)", "should return")
+		{
 			fail_next_recv_reponse_size = sizeof(struct protocol_v1);
 			fail_next_recv_reponse_version = GENERATE(2, 3);
 			fail_next_next_recv_reponse_size = sizeof(struct protocol_v1);
@@ -133,7 +142,8 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Got incoming request with protocol version " + std::to_string(expected_version)));
 		}
 
-		SECTION("recv_cmd with incomplete second response (v2-v3)", "should return -1") {
+		SECTION("recv_cmd with incomplete second response (v2-v3)", "should return -1")
+		{
 			fail_next_recv_reponse_size = sizeof(struct protocol_v1);
 			fail_next_recv_reponse_version = GENERATE(2, 3);
 			fail_next_next_recv_reponse_size = 0;
@@ -150,10 +160,12 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 		}
 	}
 
-	SECTION("send_cmd function") {
+	SECTION("send_cmd function")
+	{
 		fd = pipefd[1];
 
-		SECTION("send_cmd with invalid version", "should return -1") {
+		SECTION("send_cmd with invalid version", "should return -1")
+		{
 			cmd->ver = GENERATE(0, 4);
 
 			ret = send_cmd(cmd, fd);
@@ -162,7 +174,8 @@ TEST_CASE("protocol_helper.c", "[protocol_helper]")
 			REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to send render cmd with unknown protocol version " + std::to_string(cmd->ver)));
 		}
 
-		SECTION("send_cmd with invalid fd", "should return -1") {
+		SECTION("send_cmd with invalid fd", "should return -1")
+		{
 			cmd->ver = GENERATE(1, 2, 3);
 
 			ret = send_cmd(cmd, fd);

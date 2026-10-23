@@ -21,6 +21,7 @@
 #endif
 
 #define asprintf mocked_asprintf
+#define calloc mocked_calloc
 #define connect mocked_connect
 #define exit mocked_exit
 #define g_logger mocked_g_logger
@@ -29,6 +30,7 @@
 #define malloc mocked_malloc
 #define mkdir mocked_mkdir
 #define open mocked_open
+#define pthread_create mocked_pthread_create
 #define recv mocked_recv
 #define socket mocked_socket
 #define strndup mocked_strndup
@@ -44,9 +46,9 @@ extern "C" {
 #include "store_file_utils.c"
 #include "sys_utils.c"
 
-	struct storage_backend * init_storage_backend(const char * options)
+	struct storage_backend *init_storage_backend(const char *options)
 	{
-		struct storage_backend * store = init_storage_file(options);
+		struct storage_backend *store = init_storage_file(options);
 		return store;
 	}
 }
@@ -55,6 +57,7 @@ extern "C" {
 #include "parameterize_style.cpp"
 
 #undef asprintf
+#undef calloc
 #undef connect
 #undef exit
 #undef g_logger
@@ -63,6 +66,7 @@ extern "C" {
 #undef malloc
 #undef mkdir
 #undef open
+#undef pthread_create
 #undef recv
 #undef socket
 #undef strndup

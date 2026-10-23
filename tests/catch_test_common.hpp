@@ -53,12 +53,14 @@ extern "C" {
 	void mocked_g_logger(int log_level, const char *format, ...);
 
 	int mocked_asprintf(char **strp, const char *fmt, ...);
+	void *mocked_calloc(size_t num, size_t size);
 	int mocked_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 	int mocked_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
 	int mocked_getloadavg(double loadavg[], int nelem);
 	void *mocked_malloc(size_t size);
 	int mocked_mkdir(const char *path, mode_t mode);
 	int mocked_open(const char *pathname, int flags, ...);
+	int mocked_pthread_create(pthread_t *__restrict newthread, const pthread_attr_t *__restrict attr, void *(*start_routine)(void *), void *__restrict arg);
 	ssize_t mocked_recv(int fd, void *buf, size_t n, int flags);
 	int mocked_socket(int domain, int type, int protocol) noexcept;
 	char *mocked_strndup(const char *s, size_t n);

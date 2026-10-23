@@ -8,16 +8,19 @@ extern std::string err_log_lines;
 
 TEST_CASE("sys_utils.c", "[sys_utils]")
 {
-	SECTION("get_load_avg function") {
+	SECTION("get_load_avg function")
+	{
 		err_log_lines.clear();
 
-		SECTION("get_load_avg", "should return positive") {
+		SECTION("get_load_avg", "should return positive")
+		{
 			double loadavg = get_load_avg();
 
 			REQUIRE(loadavg > 0);
 		}
 
-		SECTION("get_load_avg with unobtainable load average", "should return 1000") {
+		SECTION("get_load_avg with unobtainable load average", "should return 1000")
+		{
 			fail_next_getloadavg = true;
 
 			double loadavg = get_load_avg();

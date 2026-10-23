@@ -1323,7 +1323,7 @@ add_compile_definitions(
   RENDERD_CONF="${PROJECT_SOURCE_DIR}/etc/renderd/renderd.conf.examples"
 )
 include_directories(${PROJECT_SOURCE_DIR}/includes)
-link_libraries(${GLIB_LIBRARIES})
+link_libraries(${GLIB_LIBRARIES} Threads::Threads)
 
 #-----------------------------------------------------------------------------
 #
