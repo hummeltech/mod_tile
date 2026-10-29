@@ -22,7 +22,7 @@ jobs:
         --unpad-paren
         includes/*.h includes/*.hpp src/*.c src/*.cpp
     name: Lint with `Artistic Style`
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
